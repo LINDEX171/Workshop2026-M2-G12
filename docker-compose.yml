@@ -15,11 +15,20 @@
 
 name: ${COMPOSE_PROJECT_NAME:-resilience-g12}
 
+# --- Logs Docker : rotation + nom du service dans chaque ligne (lu par Promtail) ---
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    labels: com.docker.compose.service
+
 # --- Socle commun des microservices FastAPI (section 3 du build plan) ---
 x-fastapi: &fastapi
   env_file:
     - path: .env
       required: false
+  logging: *logging
   restart: unless-stopped
   read_only: true
   tmpfs: [/tmp]
@@ -33,6 +42,7 @@ x-fastapi: &fastapi
     start_period: 10s
 
 x-hardening: &hardening
+  logging: *logging
   restart: unless-stopped
   security_opt: ["no-new-privileges:true"]
 
@@ -244,6 +254,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/technique.json
       TZ: ${TZ:-Europe/Paris}
     secrets: [grafana_admin_password]
     volumes:
@@ -282,13 +293,15 @@ services:
     command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
       - ./infra/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro   # logs Docker, lecture seule
+      - promtail-data:/var/lib/promtail                             # positions de lecture
     networks: [ops]
     profiles: [obs, full]
     depends_on:
       loki: { condition: service_started }
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
     <<: *hardening
     privileged: true
     volumes:
@@ -351,6 +364,7 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+  promtail-data:
   ollama-data:
 
 networks:

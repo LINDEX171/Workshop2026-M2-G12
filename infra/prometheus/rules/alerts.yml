@@ -1,2 +1,42 @@
-# Règles d'alerte — remplies en Phase 4 (HighErrorRate, HighLatencyP95, PaymentApiDown).
-groups: []
+# Règles d'alerte -> Alertmanager -> webhook remediator:8000/alert
+# Les labels `type` et `target` sont lus par le remediator pour choisir le playbook
+# (même vocabulaire que les alertes du detector).
+groups:
+  - name: payment-api
+    rules:
+      - alert: PaymentApiDown
+        expr: up{job="payment-api"} == 0
+        for: 20s
+        labels:
+          severity: critical
+          type: service_down
+          target: payment-api
+        annotations:
+          summary: "payment-api ne répond plus"
+          description: "Prometheus n'arrive plus à joindre payment-api depuis 20 s."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="payment-api", status="5xx"}[1m]))
+            / sum(rate(http_requests_total{job="payment-api"}[1m])) > 0.2
+        for: 30s
+        labels:
+          severity: critical
+          type: availability_dos
+          target: payment-api
+        annotations:
+          summary: "Taux d'erreurs 5xx élevé sur payment-api"
+          description: "Plus de 20 % des requêtes de payment-api échouent en 5xx ({{ $value | humanizePercentage }})."
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_highr_seconds_bucket{job="payment-api"}[1m]))) > 1
+        for: 30s
+        labels:
+          severity: warning
+          type: availability_dos
+          target: payment-api
+        annotations:
+          summary: "Latence p95 élevée sur payment-api"
+          description: "La latence p95 de payment-api dépasse 1 s ({{ $value | humanizeDuration }})."

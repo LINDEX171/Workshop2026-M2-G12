@@ -1,5 +1,5 @@
 import structlog
-from fastapi import FastAPI, Query
+from fastapi import Body, FastAPI, Query
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.config import get_settings
@@ -18,6 +18,35 @@ Instrumentator().instrument(app).expose(app)
 # status ∈ detected | running | recovered | failed | escalated
 # Phase 7 : alimenté par POST /alert et l'exécution des playbooks Ansible.
 EVENTS: list[dict] = []
+
+
+@app.post("/alert", status_code=202)
+async def alert(payload: dict = Body(...)):
+    """Reçoit les alertes du detector ou d'Alertmanager.
+
+    Phase 7 : normalisation des deux formats, table de décision et playbooks.
+    Pour l'instant l'alerte est seulement journalisée (visible dans Loki / SOC).
+    """
+    if "alerts" in payload:  # format webhook Alertmanager
+        for a in payload["alerts"]:
+            labels = a.get("labels", {})
+            log.warning(
+                "alert_received",
+                source="alertmanager",
+                alertname=labels.get("alertname"),
+                type=labels.get("type"),
+                target=labels.get("target"),
+                alert_status=a.get("status"),
+            )
+    else:  # format detector
+        log.warning(
+            "alert_received",
+            source="detector",
+            type=payload.get("type"),
+            target=payload.get("target"),
+            score=payload.get("score"),
+        )
+    return {"accepted": True}
 
 
 @app.get("/events")

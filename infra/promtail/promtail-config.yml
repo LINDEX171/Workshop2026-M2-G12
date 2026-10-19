@@ -1,12 +1,49 @@
-# Configuration minimale (Phase 1) — collecte des logs Docker ajoutée en Phase 4.
+# Promtail — lit les fichiers de logs Docker (/var/lib/docker/containers, lecture seule)
+# et les pousse vers Loki, étiquetés par service.
+# Le nom du service vient de l'option de log `labels: com.docker.compose.service`
+# posée sur chaque conteneur dans docker-compose.yml (champ `attrs` du fichier JSON).
+# Aucun accès au socket Docker n'est nécessaire.
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
+  log_level: warn
 
 positions:
-  filename: /tmp/positions.yaml
+  filename: /var/lib/promtail/positions.yaml
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
 
-scrape_configs: []
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+    pipeline_stages:
+      # Enveloppe du driver json-file : {"log": "...", "stream": "...", "time": "...", "attrs": {...}}
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            time: time
+            service: 'attrs."com.docker.compose.service"'
+      - labels:
+          service:
+          stream:
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - output:
+          source: output
+      # Conteneurs hors projet (sans label de service) : ignorés
+      - match:
+          selector: '{service=""}'
+          action: drop
+      # Logs applicatifs JSON (structlog) : le niveau devient un label filtrable
+      - json:
+          expressions:
+            level: level
+      - labels:
+          level:

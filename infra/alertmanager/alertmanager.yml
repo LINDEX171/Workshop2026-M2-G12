@@ -1,5 +1,15 @@
-# Configuration minimale (Phase 1) — le webhook vers remediator:8000/alert arrive en Phase 4.
+# Alertmanager — 2e voie d'alerte vers le remediator (la 1re est le detector ML).
+# Regroupement et répétition courts pour la démo.
 route:
-  receiver: "null"
+  receiver: remediator
+  group_by: ["alertname", "target"]
+  group_wait: 5s
+  group_interval: 30s
+  repeat_interval: 5m
+
 receivers:
-  - name: "null"
+  - name: remediator
+    webhook_configs:
+      - url: http://remediator:8000/alert
+        send_resolved: true
+        max_alerts: 10

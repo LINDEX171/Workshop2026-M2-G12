@@ -1,0 +1,45 @@
+# Alerting Grafana (fonction SOC) — règle LogQL sur les échecs de connexion.
+# Plus de 10 échecs de login en 1 minute -> suspicion de brute force.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: soc
+    folder: RESILIENCE-ALPHA
+    interval: 30s
+    rules:
+      - uid: soc-auth-bruteforce
+        title: "SOC — Pic d'échecs de connexion (brute force ?)"
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+          type: auth_bruteforce
+          target: auth
+        annotations:
+          summary: "Plus de 10 échecs de connexion en 1 minute sur auth"
+          description: "Voir le panneau « Échecs de connexion » du dashboard SOC pour les IP sources."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: range
+              expr: 'sum(count_over_time({service="auth"} |= "login_failed" [1m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [10] }
