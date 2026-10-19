@@ -1,0 +1,123 @@
+# =====================================================================
+# WAF — Nginx + ModSecurity v3 + OWASP CRS (image owasp/modsecurity-crs)
+# Remplace le routage par défaut de l'image. ModSecurity reste actif :
+# il est chargé au niveau `http` par conf.d/modsecurity.conf (image).
+#
+#   /             -> frontend:8080
+#   /api/auth/*   -> auth:8000/*
+#   /api/pay/*    -> payment-api:8000/*
+#   /api/status   -> detector:8000/status (lecture seule)
+# =====================================================================
+
+# --- Liste d'IP bannies (écrite par le remediator, rechargée par SIGHUP) ---
+# Fichiers *.conf de infra/waf/banlist/ (partagé avec le remediator), une ligne par IP : `203.0.113.7 1;`
+# (`map` et non `geo` : seul `map` accepte un motif *.conf dans son include)
+map $remote_addr $banned {
+    default 0;
+    include /etc/nginx/banlist/*.conf;
+}
+
+# --- Anti brute force sur le login (le DoS sur /api/pay n'est volontairement PAS limité
+#     ici : c'est le scénario de démo, traité par la détection ML + remédiation) ---
+limit_req_zone $binary_remote_addr zone=login:10m rate=30r/m;
+limit_req_status 429;
+
+# --- HTTP : redirection systématique vers HTTPS ---
+server {
+    listen 8080 default_server;
+    server_name _;
+    server_tokens off;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "OK";
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- HTTPS : point d'entrée unique de la plateforme ---
+server {
+    listen 8443 ssl default_server;
+    server_name _;
+    server_tokens off;
+
+    ssl_certificate     /etc/nginx/certs/server.crt;
+    ssl_certificate_key /etc/nginx/certs/server.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    client_max_body_size 1m;
+
+    # IP bannie par la remédiation -> refus immédiat
+    if ($banned) {
+        return 403;
+    }
+
+    # DNS Docker + upstreams en variables : le WAF démarre même si un service est absent
+    # et suit les redémarrages (nouvelle IP) déclenchés par la remédiation.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $frontend_upstream http://frontend:8080;
+    set $auth_upstream     http://auth:8000;
+    set $pay_upstream      http://payment-api:8000;
+    set $status_upstream   http://detector:8000;
+
+    # X-Forwarded-For est ÉCRASÉ (pas complété) : un client ne peut pas usurper son IP
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_http_version 1.1;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout    15s;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "OK";
+    }
+
+    # IP du client telle que vue par le WAF (vérification du bannissement)
+    location = /api/whoami {
+        default_type text/plain;
+        return 200 "$remote_addr\n";
+    }
+
+    # Surfaces internes jamais exposées : métriques, documentation OpenAPI
+    location ~ ^/api/[^/]+/(metrics|docs|redoc|openapi\.json) {
+        return 404;
+    }
+
+    location = /api/auth/login {
+        limit_req zone=login burst=10 nodelay;
+        rewrite ^/api/auth/(.*)$ /$1 break;
+        proxy_pass $auth_upstream;
+    }
+
+    location /api/auth/ {
+        rewrite ^/api/auth/(.*)$ /$1 break;
+        proxy_pass $auth_upstream;
+    }
+
+    location /api/pay/ {
+        rewrite ^/api/pay/(.*)$ /$1 break;
+        proxy_pass $pay_upstream;
+    }
+
+    location = /api/status {
+        rewrite ^ /status break;
+        proxy_pass $status_upstream;
+    }
+
+    location /api/ {
+        return 404;
+    }
+
+    location / {
+        proxy_pass $frontend_upstream;
+    }
+}

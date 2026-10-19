@@ -38,3 +38,11 @@ Thumbs.db
 
 # --- Secrets de dev temporaires (Phase 1, remplacés par SOPS en Phase 10) ---
 secrets/*.txt
+
+# --- Certificat TLS du WAF (généré par scripts/gen_cert.sh) ---
+infra/waf/certs/*
+!infra/waf/certs/.gitkeep
+
+# --- IP bannies par la remédiation (état local, pas versionné) ---
+infra/waf/banlist/*.conf
+!infra/waf/banlist/00-base.conf

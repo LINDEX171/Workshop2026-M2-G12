@@ -91,6 +91,8 @@ services:
       SERVICE_NAME: remediator
       TZ: ${TZ:-Europe/Paris}
       DOCKER_HOST: tcp://docker-socket-proxy:2375
+    volumes:
+      - ./infra/waf/banlist:/var/lib/waf-banlist   # seule écriture possible : la liste des IP bannies
     networks: [ops]            # aucun port publié, ops uniquement
     profiles: [ai, full]
     depends_on:
@@ -188,13 +190,21 @@ services:
     environment:
       BACKEND: http://frontend:8080
       SERVER_NAME: resilience-g12
-      MODSEC_RULE_ENGINE: "On"
+      MODSEC_RULE_ENGINE: "On"              # mode BLOCAGE (pas seulement détection)
+      BLOCKING_PARANOIA: 1
+      MODSEC_AUDIT_ENGINE: RelevantOnly     # journal d'audit des requêtes suspectes
+      MODSEC_AUDIT_LOG_FORMAT: JSON
+      MODSEC_AUDIT_LOG_TYPE: Serial
+      MODSEC_AUDIT_LOG: /dev/stdout         # -> Promtail -> Loki -> dashboard SOC
       TZ: ${TZ:-Europe/Paris}
     volumes:
-      - ./infra/waf/conf.d:/etc/nginx/templates/conf.d/custom:ro
-      - ./infra/waf/modsecurity:/etc/modsecurity.d/custom:ro
+      # Notre routage remplace celui de l'image (ModSecurity reste chargé par l'image)
+      - ./infra/waf/conf.d/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
+      - ./infra/waf/certs:/etc/nginx/certs:ro       # généré par scripts/gen_cert.sh
+      - ./infra/waf/banlist:/etc/nginx/banlist:ro   # IP bannies, écrites par le remediator
     ports:
       - "${WAF_BIND_IP:-127.0.0.1}:443:8443"   # SEUL point d'entrée exposé
+      - "${WAF_BIND_IP:-127.0.0.1}:80:8080"    # redirection vers HTTPS uniquement
     networks: [public, app]
     profiles: [core, security, full]
     depends_on:
