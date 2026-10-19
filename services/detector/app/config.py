@@ -13,7 +13,15 @@ class Settings(BaseSettings):
     prometheus_url: str = "http://prometheus:9090"
     remediator_url: str = "http://remediator:8000"
     detector_interval_sec: int = 10
-    detector_threshold: float = 0.65
+    # "auto" : seuil calibré à l'entraînement (max du trafic normal + marge).
+    # Une valeur numérique (ex. 0.6) force un seuil fixe.
+    detector_threshold: str = "auto"
+    # Seuil utilisé tant qu'aucun modèle calibré n'est chargé
+    default_threshold: float = 0.6
+    # Délai minimal entre deux alertes (laisse le temps à la remédiation d'agir)
+    alert_cooldown_sec: int = 60
+    # Modèle produit par `python -m app.train` (rechargé à chaud s'il change)
+    model_path: str = "/app/model/model.pkl"
 
     # Services sondés par l'agrégateur /status (tableau de bord)
     auth_url: str = "http://auth:8000"

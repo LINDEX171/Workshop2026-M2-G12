@@ -79,6 +79,8 @@ services:
     environment:
       SERVICE_NAME: detector
       TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - ./services/detector/model:/app/model   # model.pkl + report.json (scripts/train_model.sh)
     networks: [app, ops]       # app : agrégateur /status lu par le frontend (lecture seule)
     profiles: [ai, full]
     depends_on:
@@ -125,6 +127,7 @@ services:
       LOCUST_HOST: ${LOCUST_HOST:-https://waf:8443}
       LOCUST_USERS: ${LOCUST_USERS:-5}
       LOCUST_SPAWN_RATE: ${LOCUST_SPAWN_RATE:-1}
+    secrets: [operator_password]   # se connecte comme un opérateur réel
     networks: [public]         # simule un client externe : passe par le WAF
     profiles: [attack, full]
     depends_on:

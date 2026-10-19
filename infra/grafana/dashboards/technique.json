@@ -356,8 +356,8 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Score d'anomalie",
-      "description": "Isolation Forest (detector). Seuil d'alerte : 0.65.",
+      "title": "Anomalie détectée ?",
+      "description": "Isolation Forest (detector) : score comparé au seuil calibré à l'entraînement.",
       "gridPos": {
         "x": 20,
         "y": 0,
@@ -375,14 +375,13 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anomaly_score",
+          "expr": "(anomaly_score > bool anomaly_threshold)",
           "legendFormat": ""
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 2,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -391,12 +390,26 @@
                 "color": "#0ca30c"
               },
               {
-                "value": 0.65,
+                "value": 1,
                 "color": "#d03b3b"
               }
             ]
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "✓ Normal",
+                  "color": "#0ca30c"
+                },
+                "1": {
+                  "text": "✕ Anomalie",
+                  "color": "#d03b3b"
+                }
+              }
+            }
+          ],
           "color": {
             "mode": "thresholds"
           }
@@ -808,7 +821,7 @@
     {
       "id": 14,
       "type": "timeseries",
-      "title": "Score d'anomalie (seuil 0.65)",
+      "title": "Score d'anomalie et seuil calibré",
       "gridPos": {
         "x": 8,
         "y": 28,
@@ -828,6 +841,15 @@
           },
           "expr": "anomaly_score",
           "legendFormat": "score"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "anomaly_threshold",
+          "legendFormat": "seuil"
         }
       ],
       "fieldConfig": {
@@ -840,26 +862,10 @@
             "lineWidth": 2,
             "fillOpacity": 0,
             "showPoints": "never",
-            "spanNulls": true,
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
+            "spanNulls": true
           },
           "min": 0,
-          "max": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "value": null,
-                "color": "#0ca30c"
-              },
-              {
-                "value": 0.65,
-                "color": "#d03b3b"
-              }
-            ]
-          }
+          "max": 1
         },
         "overrides": []
       },

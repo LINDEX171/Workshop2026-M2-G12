@@ -1,0 +1,81 @@
+{
+  "trained_at": "2026-10-19T14:31:22.708638+00:00",
+  "n_samples": 151,
+  "n_estimators": 200,
+  "threshold": 0.608,
+  "envelope": {
+    "sigma": 6.0,
+    "min_features": 2,
+    "rel_floor": 0.25,
+    "false_alerts_on_train": 0
+  },
+  "score_train": {
+    "p50": 0.4057,
+    "p95": 0.4893,
+    "p99": 0.5171,
+    "max": 0.5578
+  },
+  "feature_stats": {
+    "req_rate": {
+      "min": 2.0184,
+      "mean": 2.2022,
+      "max": 2.4002,
+      "scale": 0.5506
+    },
+    "err_ratio": {
+      "min": 0.0,
+      "mean": 0.0,
+      "max": 0.0,
+      "scale": 0.001
+    },
+    "p95_latency": {
+      "min": 0.0239,
+      "mean": 0.0404,
+      "max": 0.0453,
+      "scale": 0.0101
+    },
+    "cpu": {
+      "min": 0.02,
+      "mean": 0.0246,
+      "max": 0.0305,
+      "scale": 0.0061
+    },
+    "ram_mb": {
+      "min": 90.3168,
+      "mean": 90.7716,
+      "max": 90.8411,
+      "scale": 22.6929
+    },
+    "db_active": {
+      "min": 1.0,
+      "mean": 1.2252,
+      "max": 2.0,
+      "scale": 0.4177
+    },
+    "tx_fail_ratio": {
+      "min": 0.0,
+      "mean": 0.0174,
+      "max": 0.1515,
+      "scale": 0.0349
+    },
+    "up": {
+      "min": 1.0,
+      "mean": 1.0,
+      "max": 1.0,
+      "scale": 0.25
+    }
+  },
+  "window_minutes": 25,
+  "step_seconds": 10,
+  "threshold_margin": 0.05,
+  "features": [
+    "req_rate",
+    "err_ratio",
+    "p95_latency",
+    "cpu",
+    "ram_mb",
+    "db_active",
+    "tx_fail_ratio",
+    "up"
+  ]
+}

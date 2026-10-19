@@ -49,7 +49,7 @@ def test_dep_state():
 def test_score_endpoint():
     r = client.get("/score")
     assert r.status_code == 200
-    assert r.json()["threshold"] == 0.65
+    assert isinstance(r.json()["threshold"], float)
 
 
 def test_status_endpoint(monkeypatch):
