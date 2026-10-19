@@ -1,0 +1,12 @@
+# Configuration minimale (Phase 1) — collecte des logs Docker ajoutée en Phase 4.
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs: []

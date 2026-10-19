@@ -1,0 +1,5 @@
+# Configuration minimale (Phase 1) — le webhook vers remediator:8000/alert arrive en Phase 4.
+route:
+  receiver: "null"
+receivers:
+  - name: "null"

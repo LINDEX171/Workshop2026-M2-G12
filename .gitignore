@@ -35,3 +35,6 @@ services/assistant/chroma/
 Thumbs.db
 .idea/
 .vscode/
+
+# --- Secrets de dev temporaires (Phase 1, remplacés par SOPS en Phase 10) ---
+secrets/*.txt

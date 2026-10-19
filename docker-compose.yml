@@ -2,10 +2,10 @@
 # RESILIENCE-ALPHA — Groupe 12 — stack Docker Compose
 #
 # Profils (travail isolé) :
-#   core     : db, auth, payment-api, waf, frontend
-#   obs      : prometheus, grafana, loki, promtail, cadvisor, exporters
-#   security : waf (+ dépendances)
-#   ai       : detector, assistant, ollama
+#   core     : db, adminer, auth, payment-api, waf, frontend
+#   obs      : prometheus, alertmanager, grafana, loki, promtail, cadvisor, postgres-exporter (+ db)
+#   security : waf, frontend
+#   ai       : detector, remediator, docker-socket-proxy, assistant, ollama (+ db)
 #   attack   : load-generator
 #   full     : TOUT
 #
@@ -15,7 +15,312 @@
 
 name: ${COMPOSE_PROJECT_NAME:-resilience-g12}
 
-services: {}
+# --- Socle commun des microservices FastAPI (section 3 du build plan) ---
+x-fastapi: &fastapi
+  env_file:
+    - path: .env
+      required: false
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=2).status==200 else 1)"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 10s
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  # ===================== MICROSERVICES (codés par nous) =====================
+  auth:
+    <<: *fastapi
+    build: ./services/auth
+    environment:
+      SERVICE_NAME: auth
+      TZ: ${TZ:-Europe/Paris}
+    secrets: [jwt_secret]
+    networks: [app]            # PAS sur `data` : auth ne joint pas la BDD
+    profiles: [core, full]
+
+  payment-api:
+    <<: *fastapi
+    build: ./services/payment-api
+    environment:
+      SERVICE_NAME: payment-api
+      TZ: ${TZ:-Europe/Paris}
+    secrets: [pg_password]
+    networks: [app, data]
+    profiles: [core, full]
+    depends_on:
+      db: { condition: service_healthy }
+      auth: { condition: service_started }
+
+  detector:
+    <<: *fastapi
+    build: ./services/detector
+    environment:
+      SERVICE_NAME: detector
+      TZ: ${TZ:-Europe/Paris}
+    networks: [ops]
+    profiles: [ai, full]
+    depends_on:
+      prometheus: { condition: service_started, required: false }
+
+  remediator:
+    <<: *fastapi
+    build: ./services/remediator
+    environment:
+      SERVICE_NAME: remediator
+      TZ: ${TZ:-Europe/Paris}
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
+    networks: [ops]            # aucun port publié, ops uniquement
+    profiles: [ai, full]
+    depends_on:
+      docker-socket-proxy: { condition: service_started }
+
+  assistant:
+    <<: *fastapi
+    build: ./services/assistant
+    environment:
+      SERVICE_NAME: assistant
+      TZ: ${TZ:-Europe/Paris}
+    networks: [app, ops]       # aucun droit Docker : lit seulement la doc
+    profiles: [ai, full]
+    depends_on:
+      ollama: { condition: service_started, required: false }
+
+  frontend:
+    build: ./frontend
+    <<: *hardening
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    networks: [public, app]
+    profiles: [core, security, full]
+
+  load-generator:
+    build: ./services/load-generator
+    <<: *hardening
+    environment:
+      LOCUST_HOST: ${LOCUST_HOST:-https://waf:8443}
+      LOCUST_USERS: ${LOCUST_USERS:-5}
+      LOCUST_SPAWN_RATE: ${LOCUST_SPAWN_RATE:-1}
+    networks: [public]         # simule un client externe : passe par le WAF
+    profiles: [attack, full]
+    depends_on:
+      waf: { condition: service_started, required: false }
+
+  # ===================== DONNÉES =====================
+  db:
+    image: postgres:16-alpine
+    <<: *hardening
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-payadmin}
+      POSTGRES_DB: ${POSTGRES_DB:-payments}
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+      TZ: ${TZ:-Europe/Paris}
+    secrets: [pg_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    networks: [data]           # AUCUN port publié
+    profiles: [core, obs, ai, full]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  adminer:
+    image: adminer:4.8.1
+    <<: *hardening
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "127.0.0.1:8081:8080"  # local uniquement, jamais sur 192.168.137.1
+    networks: [data]
+    profiles: [core, full]
+    depends_on:
+      db: { condition: service_healthy }
+
+  # ===================== SÉCURITÉ =====================
+  waf:
+    image: owasp/modsecurity-crs:4.8.0-nginx-alpine-202411071011
+    <<: *hardening
+    environment:
+      BACKEND: http://frontend:8080
+      SERVER_NAME: resilience-g12
+      MODSEC_RULE_ENGINE: "On"
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - ./infra/waf/conf.d:/etc/nginx/templates/conf.d/custom:ro
+      - ./infra/waf/modsecurity:/etc/modsecurity.d/custom:ro
+    ports:
+      - "${WAF_BIND_IP:-127.0.0.1}:443:8443"   # SEUL point d'entrée exposé
+    networks: [public, app]
+    profiles: [core, security, full]
+    depends_on:
+      frontend: { condition: service_started }
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    <<: *hardening
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      INFO: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [ops]            # joignable seulement par le remediator
+    profiles: [ai, full]
+
+  # ===================== OBSERVABILITÉ =====================
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    <<: *hardening
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3d
+      - --web.enable-lifecycle
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks: [app, ops]
+    profiles: [obs, full]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    <<: *hardening
+    volumes:
+      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks: [ops]
+    profiles: [obs, full]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    <<: *hardening
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      TZ: ${TZ:-Europe/Paris}
+    secrets: [grafana_admin_password]
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"  # local uniquement
+    networks: [ops]
+    profiles: [obs, full]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  loki:
+    image: grafana/loki:3.2.1
+    <<: *hardening
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    networks: [ops]
+    profiles: [obs, full]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    <<: *hardening
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./infra/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+    networks: [ops]
+    profiles: [obs, full]
+    depends_on:
+      loki: { condition: service_started }
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    <<: *hardening
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks: [ops]
+    profiles: [obs, full]
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    <<: *hardening
+    environment:
+      DATA_SOURCE_URI: db:5432/${POSTGRES_DB:-payments}?sslmode=disable
+      DATA_SOURCE_USER: ${POSTGRES_USER:-payadmin}
+      DATA_SOURCE_PASS_FILE: /run/secrets/pg_password
+    secrets: [pg_password]
+    networks: [data, ops]      # data pour lire la BDD, ops pour être scrapé
+    profiles: [obs, full]
+    depends_on:
+      db: { condition: service_healthy }
+
+  # ===================== IA =====================
+  ollama:
+    image: ollama/ollama:0.4.7
+    <<: *hardening
+    volumes:
+      - ollama-data:/root/.ollama
+    networks: [ops]
+    profiles: [ai, full]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+# --- Secrets ---
+# Phase 1 : fichiers locaux gitignorés générés par scripts/init_dev_secrets.sh.
+# Phase 10 : déchiffrés à la volée depuis secrets/secrets.enc.env (SOPS + age).
+secrets:
+  pg_password:
+    file: ./secrets/pg_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt
+
+volumes:
+  pgdata:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+  ollama-data:
 
 networks:
   public: {}   # seule zone exposée (waf, frontend)
