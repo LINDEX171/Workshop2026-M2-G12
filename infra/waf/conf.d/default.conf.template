@@ -17,6 +17,19 @@ map $remote_addr $banned {
     include /etc/nginx/banlist/*.conf;
 }
 
+# --- Signatures bannies (User-Agent), écrites par le remediator dans infra/waf/banlist-ua/ ---
+# Derrière Docker Desktop l'IP source n'est pas exploitable : on bannit l'émetteur par
+# sa signature. Format d'une ligne : `"ResilienceDoS/1.0" 1;`
+map $http_user_agent $banned_ua {
+    default 0;
+    include /etc/nginx/banlist-ua/*.conf;
+}
+
+# --- Journal d'accès JSON (source du SOC et de l'identification de l'attaquant par Loki) ---
+log_format waf_access escape=json
+    '{"log_type":"access","ts":"$time_iso8601","remote":"$remote_addr",'
+    '"ua":"$http_user_agent","method":"$request_method","uri":"$uri","status":$status}';
+
 # --- Anti brute force sur le login (le DoS sur /api/pay n'est volontairement PAS limité
 #     ici : c'est le scénario de démo, traité par la détection ML + remédiation) ---
 limit_req_zone $binary_remote_addr zone=login:10m rate=30r/m;
@@ -52,9 +65,13 @@ server {
     ssl_session_timeout 10m;
 
     client_max_body_size 1m;
+    access_log /dev/stdout waf_access;
 
-    # IP bannie par la remédiation -> refus immédiat
+    # Attaquant banni par la remédiation (IP ou signature) -> refus immédiat
     if ($banned) {
+        return 403;
+    }
+    if ($banned_ua) {
         return 403;
     }
 

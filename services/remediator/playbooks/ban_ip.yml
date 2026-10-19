@@ -1,0 +1,32 @@
+---
+# Bannit l'attaquant au niveau du WAF puis recharge sa configuration.
+# Derrière Docker Desktop, l'IP source n'est pas visible : on bannit la SIGNATURE
+# (User-Agent) du plus gros émetteur observé dans les logs WAF. Le mécanisme IP est
+# conservé pour un déploiement réseau où l'IP est exploitable.
+# Variables : ban_ua, ban_ip (optionnel), banlist_ua_dir, banlist_ip_dir,
+#             waf_container_id, docker_proxy_url.
+- name: Bannir l'attaquant au WAF
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Bannir la signature (User-Agent)
+      ansible.builtin.copy:
+        dest: "{{ banlist_ua_dir }}/ban-attacker.conf"
+        content: "\"{{ ban_ua }}\" 1;\n"
+        mode: "0644"
+      when: ban_ua is defined and ban_ua | length > 0
+
+    - name: Bannir l'IP (si exploitable)
+      ansible.builtin.copy:
+        dest: "{{ banlist_ip_dir }}/ban-{{ ban_ip }}.conf"
+        content: "{{ ban_ip }} 1;\n"
+        mode: "0644"
+      when: ban_ip is defined and ban_ip | length > 0
+
+    - name: Recharger le WAF (SIGHUP via le proxy Docker)
+      ansible.builtin.uri:
+        url: "{{ docker_proxy_url }}/containers/{{ waf_container_id }}/kill?signal=HUP"
+        method: POST
+        status_code: [204]
+      when: waf_container_id is defined and waf_container_id | length > 0

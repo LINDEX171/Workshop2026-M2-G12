@@ -46,3 +46,7 @@ infra/waf/certs/*
 # --- IP bannies par la remédiation (état local, pas versionné) ---
 infra/waf/banlist/*.conf
 !infra/waf/banlist/00-base.conf
+
+# --- Signatures bannies par la remédiation (état local) ---
+infra/waf/banlist-ua/*.conf
+!infra/waf/banlist-ua/00-base.conf

@@ -1,0 +1,23 @@
+---
+# Restaure le dernier dump sain de la base (incident data_incoherent).
+# Squelette documenté : nécessite une sauvegarde régulière (pg_dump) montée dans le
+# remediator. Hors périmètre du scénario DoS de la démo ; fourni pour la table de décision.
+# Variables : dump_path (défaut /var/lib/db-backups/last-clean.sql).
+- name: Restaurer la base depuis le dernier dump sain
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    dump_path: /var/lib/db-backups/last-clean.sql
+  tasks:
+    - name: Vérifier la présence d'un dump sain
+      ansible.builtin.stat:
+        path: "{{ dump_path }}"
+      register: dump
+
+    - name: Pas de dump disponible -> escalade
+      ansible.builtin.fail:
+        msg: "Aucun dump sain ({{ dump_path }}) : restauration impossible, intervention humaine requise"
+      when: not dump.stat.exists
+
+    # Restauration réelle (pg_restore/psql vers la base) à brancher avec les sauvegardes.

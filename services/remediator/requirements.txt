@@ -4,3 +4,5 @@ pydantic-settings==2.*
 httpx==0.27.*
 prometheus-fastapi-instrumentator==7.*
 structlog==24.*
+ansible-runner==2.4.*
+ansible-core==2.17.*

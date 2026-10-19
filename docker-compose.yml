@@ -92,10 +92,11 @@ services:
     environment:
       SERVICE_NAME: remediator
       TZ: ${TZ:-Europe/Paris}
-      DOCKER_HOST: tcp://docker-socket-proxy:2375
+    secrets: [operator_password]   # transaction de preuve lors de la vérification de reprise
     volumes:
-      - ./infra/waf/banlist:/var/lib/waf-banlist   # seule écriture possible : la liste des IP bannies
-    networks: [ops]            # aucun port publié, ops uniquement
+      - ./infra/waf/banlist:/var/lib/waf-banlist       # IP bannies (écriture)
+      - ./infra/waf/banlist-ua:/var/lib/waf-banlist-ua # signatures bannies (écriture)
+    networks: [ops, app]       # ops : détection + proxy Docker ; app : vérifie la reprise via le WAF. Aucun port publié
     profiles: [ai, full]
     depends_on:
       docker-socket-proxy: { condition: service_started }
@@ -204,7 +205,8 @@ services:
       # Notre routage remplace celui de l'image (ModSecurity reste chargé par l'image)
       - ./infra/waf/conf.d/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./infra/waf/certs:/etc/nginx/certs:ro       # généré par scripts/gen_cert.sh
-      - ./infra/waf/banlist:/etc/nginx/banlist:ro   # IP bannies, écrites par le remediator
+      - ./infra/waf/banlist:/etc/nginx/banlist:ro        # IP bannies, écrites par le remediator
+      - ./infra/waf/banlist-ua:/etc/nginx/banlist-ua:ro  # signatures bannies (User-Agent)
     ports:
       - "${WAF_BIND_IP:-127.0.0.1}:443:8443"   # SEUL point d'entrée exposé
       - "${WAF_BIND_IP:-127.0.0.1}:80:8080"    # redirection vers HTTPS uniquement

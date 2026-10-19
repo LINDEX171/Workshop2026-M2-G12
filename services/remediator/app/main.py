@@ -1,8 +1,11 @@
+import asyncio
+
 import structlog
-from fastapi import Body, FastAPI, Query
+from fastapi import BackgroundTasks, Body, FastAPI, Query
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.config import get_settings
+from app.engine import Remediator
 from app.logging import setup_logging
 
 settings = get_settings()
@@ -13,46 +16,47 @@ SERVICE = settings.service_name
 app = FastAPI(title=SERVICE)
 Instrumentator().instrument(app).expose(app)
 
-# Journal horodaté des remédiations, du plus ancien au plus récent.
-# Format d'un événement : {"ts", "type", "target", "action", "status", "detail"}
-# status ∈ detected | running | recovered | failed | escalated
-# Phase 7 : alimenté par POST /alert et l'exécution des playbooks Ansible.
-EVENTS: list[dict] = []
+remediator = Remediator(settings)
+
+
+def normalize(payload: dict) -> list[dict]:
+    """Ramène les deux formats d'alerte à une liste d'incidents {type, target, score}."""
+    if "alerts" in payload:  # webhook Alertmanager
+        incidents = []
+        for a in payload["alerts"]:
+            if a.get("status") == "resolved":
+                continue
+            labels = a.get("labels", {})
+            incidents.append({
+                "type": labels.get("type", "unknown"),
+                "target": labels.get("target"),
+                "source": "alertmanager",
+                "score": None,
+            })
+        return incidents
+    return [{  # format detector
+        "type": payload.get("type", "unknown"),
+        "target": payload.get("target"),
+        "source": "detector",
+        "score": payload.get("score"),
+    }]
 
 
 @app.post("/alert", status_code=202)
-async def alert(payload: dict = Body(...)):
-    """Reçoit les alertes du detector ou d'Alertmanager.
-
-    Phase 7 : normalisation des deux formats, table de décision et playbooks.
-    Pour l'instant l'alerte est seulement journalisée (visible dans Loki / SOC).
-    """
-    if "alerts" in payload:  # format webhook Alertmanager
-        for a in payload["alerts"]:
-            labels = a.get("labels", {})
-            log.warning(
-                "alert_received",
-                source="alertmanager",
-                alertname=labels.get("alertname"),
-                type=labels.get("type"),
-                target=labels.get("target"),
-                alert_status=a.get("status"),
-            )
-    else:  # format detector
-        log.warning(
-            "alert_received",
-            source="detector",
-            type=payload.get("type"),
-            target=payload.get("target"),
-            score=payload.get("score"),
-        )
-    return {"accepted": True}
+async def alert(background: BackgroundTasks, payload: dict = Body(...)):
+    """Reçoit les alertes du detector ou d'Alertmanager et lance la remédiation en tâche de fond."""
+    incidents = normalize(payload)
+    for incident in incidents:
+        log.warning("alert_received", source=incident["source"], type=incident["type"],
+                    target=incident["target"], score=incident["score"])
+        background.add_task(remediator.handle, incident)
+    return {"accepted": True, "incidents": len(incidents)}
 
 
 @app.get("/events")
 async def events(limit: int = Query(default=50, ge=1, le=500)):
     """Journal des remédiations, du plus récent au plus ancien."""
-    return list(reversed(EVENTS[-limit:]))
+    return list(reversed(remediator.events[-limit:]))
 
 
 @app.get("/health")

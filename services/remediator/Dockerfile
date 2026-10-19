@@ -3,7 +3,9 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    HOME=/tmp \
+    ANSIBLE_LOCAL_TEMP=/tmp/ansible/.tmp
 
 WORKDIR /app
 
@@ -12,6 +14,7 @@ RUN pip install -r requirements.txt \
  && useradd --system --uid 10001 --no-create-home appuser
 
 COPY app ./app
+COPY playbooks ./playbooks
 
 USER appuser
 EXPOSE 8000

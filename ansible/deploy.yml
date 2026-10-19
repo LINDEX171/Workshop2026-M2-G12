@@ -1,0 +1,44 @@
+---
+# Déploiement reproductible de la stack (lancé depuis le PC Hôte) :
+#   ansible-playbook deploy.yml
+# Déchiffre les secrets SOPS à la volée (Phase 10), génère le certificat du WAF,
+# construit les images et démarre le profil demandé.
+- name: Déployer RESILIENCE-ALPHA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+    profile: full
+  tasks:
+    - name: Générer les secrets de développement s'ils sont absents
+      ansible.builtin.command: bash scripts/init_dev_secrets.sh
+      args:
+        chdir: "{{ project_dir }}"
+      changed_when: false
+
+    # Phase 10 : si secrets/secrets.enc.env existe, le déchiffrer avec SOPS vers secrets/*.txt
+    - name: Déchiffrer les secrets SOPS (si présents)
+      ansible.builtin.shell: >
+        test -f secrets/secrets.enc.env &&
+        command -v sops >/dev/null &&
+        scripts/decrypt_secrets.sh || true
+      args:
+        chdir: "{{ project_dir }}"
+      changed_when: false
+
+    - name: Générer le certificat TLS du WAF
+      ansible.builtin.command: bash scripts/gen_cert.sh
+      args:
+        chdir: "{{ project_dir }}"
+      changed_when: false
+
+    - name: Construire les images
+      ansible.builtin.command: docker compose --profile {{ profile }} build
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Démarrer la stack
+      ansible.builtin.command: docker compose --profile {{ profile }} up -d
+      args:
+        chdir: "{{ project_dir }}"

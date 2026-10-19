@@ -1,0 +1,18 @@
+---
+# Redémarre le conteneur cible via le docker-socket-proxy (jamais le socket brut).
+# Variables : target_container_id, docker_proxy_url (fournies par le remediator).
+- name: Redémarrer le service en incident
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Conteneur cible résolu
+      ansible.builtin.assert:
+        that: target_container_id is defined and target_container_id | length > 0
+        fail_msg: "Conteneur cible introuvable (le service n'existe pas ?)"
+
+    - name: Restart via le proxy Docker
+      ansible.builtin.uri:
+        url: "{{ docker_proxy_url }}/containers/{{ target_container_id }}/restart?t=5"
+        method: POST
+        status_code: [204]

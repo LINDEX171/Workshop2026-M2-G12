@@ -1,0 +1,21 @@
+---
+# Escalade si un simple restart ne suffit pas : revenir à la dernière image saine.
+# Dans cette maquette, les images ne sont pas versionnées par tag applicatif ; on force
+# donc une recréation du conteneur à partir de l'image de référence (restart renforcé),
+# et on documente qu'un vrai rollback retaggerait une image saine connue.
+# Variables : target_container_id, docker_proxy_url.
+- name: Rollback de l'image (best effort)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Conteneur cible résolu
+      ansible.builtin.assert:
+        that: target_container_id is defined and target_container_id | length > 0
+        fail_msg: "Conteneur cible introuvable"
+
+    - name: Recréation via le proxy Docker (image de référence)
+      ansible.builtin.uri:
+        url: "{{ docker_proxy_url }}/containers/{{ target_container_id }}/restart?t=10"
+        method: POST
+        status_code: [204]

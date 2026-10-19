@@ -1,0 +1,26 @@
+---
+# Remise à zéro propre de la stack (volumes compris) puis redémarrage.
+#   ansible-playbook reset.yml
+- name: Réinitialiser RESILIENCE-ALPHA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+    profile: full
+  tasks:
+    - name: Arrêter et supprimer conteneurs + volumes
+      ansible.builtin.command: docker compose --profile {{ profile }} down -v --remove-orphans
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Vider les listes de bannissement dynamiques du WAF
+      ansible.builtin.shell: find infra/waf/banlist infra/waf/banlist-ua -name 'ban-*.conf' -delete
+      args:
+        chdir: "{{ project_dir }}"
+      changed_when: false
+
+    - name: Redémarrer la stack
+      ansible.builtin.command: docker compose --profile {{ profile }} up -d
+      args:
+        chdir: "{{ project_dir }}"
