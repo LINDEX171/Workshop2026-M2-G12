@@ -1,21 +1,26 @@
 from fastapi.testclient import TestClient
 
+from app import db
 from app.main import app
 
 client = TestClient(app)
 
 
-def test_health():
+def test_health_ok(monkeypatch):
+    monkeypatch.setattr(db, "ping", lambda: True)
     r = client.get("/health")
     assert r.status_code == 200
-    body = r.json()
-    assert body["status"] == "ok"
-    assert body["service"] == "auth"
-    assert "deps" in body
+    assert r.json() == {"status": "ok", "service": "auth", "deps": {"db": "ok"}}
+
+
+def test_health_db_down(monkeypatch):
+    monkeypatch.setattr(db, "ping", lambda: False)
+    r = client.get("/health")
+    assert r.status_code == 503
+    assert r.json()["deps"]["db"] == "ko"
 
 
 def test_metrics():
-    client.get("/health")
     r = client.get("/metrics")
     assert r.status_code == 200
-    assert "http_requests_total" in r.text
+    assert "auth_login_total" in r.text

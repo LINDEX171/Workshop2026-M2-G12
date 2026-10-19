@@ -2,7 +2,7 @@
 # RESILIENCE-ALPHA — Groupe 12 — stack Docker Compose
 #
 # Profils (travail isolé) :
-#   core     : db, adminer, auth, payment-api, waf, frontend
+#   core     : db, auth-db, adminer, auth, payment-api, waf, frontend
 #   obs      : prometheus, alertmanager, grafana, loki, promtail, cadvisor, postgres-exporter (+ db)
 #   security : waf, frontend
 #   ai       : detector, remediator, docker-socket-proxy, assistant, ollama (+ db)
@@ -44,9 +44,11 @@ services:
     environment:
       SERVICE_NAME: auth
       TZ: ${TZ:-Europe/Paris}
-    secrets: [jwt_secret]
-    networks: [app]            # PAS sur `data` : auth ne joint pas la BDD
+    secrets: [jwt_secret, authuser_password, operator_password]
+    networks: [app, auth-data] # PAS sur `data` : auth ne joint pas la BDD des paiements
     profiles: [core, full]
+    depends_on:
+      auth-db: { condition: service_healthy }
 
   payment-api:
     <<: *fastapi
@@ -54,12 +56,12 @@ services:
     environment:
       SERVICE_NAME: payment-api
       TZ: ${TZ:-Europe/Paris}
-    secrets: [pg_password]
+    secrets: [payuser_password]
     networks: [app, data]
     profiles: [core, full]
     depends_on:
       db: { condition: service_healthy }
-      auth: { condition: service_started }
+      auth: { condition: service_healthy }
 
   detector:
     <<: *fastapi
@@ -125,12 +127,32 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-payments}
       POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
       TZ: ${TZ:-Europe/Paris}
-    secrets: [pg_password]
+    secrets: [pg_password, payuser_password]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infra/postgres/initdb:/docker-entrypoint-initdb.d:ro
     networks: [data]           # AUCUN port publié
     profiles: [core, obs, ai, full]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  auth-db:
+    image: postgres:16-alpine
+    <<: *hardening
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USER:-authadmin}
+      POSTGRES_DB: ${AUTH_POSTGRES_DB:-authdb}
+      POSTGRES_PASSWORD_FILE: /run/secrets/auth_db_admin_password
+      TZ: ${TZ:-Europe/Paris}
+    secrets: [auth_db_admin_password, authuser_password]
+    volumes:
+      - authdata:/var/lib/postgresql/data
+      - ./infra/postgres/auth-initdb:/docker-entrypoint-initdb.d:ro
+    networks: [auth-data]      # réseau interne, joignable par auth uniquement
+    profiles: [core, full]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -308,8 +330,16 @@ services:
 # Phase 1 : fichiers locaux gitignorés générés par scripts/init_dev_secrets.sh.
 # Phase 10 : déchiffrés à la volée depuis secrets/secrets.enc.env (SOPS + age).
 secrets:
-  pg_password:
+  pg_password:              # super-utilisateur payadmin (db)
     file: ./secrets/pg_password.txt
+  payuser_password:         # rôle applicatif payment-api (droits limités)
+    file: ./secrets/payuser_password.txt
+  auth_db_admin_password:   # super-utilisateur authadmin (auth-db)
+    file: ./secrets/auth_db_admin_password.txt
+  authuser_password:        # rôle applicatif auth (droits limités)
+    file: ./secrets/authuser_password.txt
+  operator_password:        # utilisateur `operator` de l'application
+    file: ./secrets/operator_password.txt
   jwt_secret:
     file: ./secrets/jwt_secret.txt
   grafana_admin_password:
@@ -317,6 +347,7 @@ secrets:
 
 volumes:
   pgdata:
+  authdata:
   prometheus-data:
   grafana-data:
   loki-data:
@@ -325,5 +356,7 @@ volumes:
 networks:
   public: {}   # seule zone exposée (waf, frontend)
   app: {}      # trafic applicatif
-  data: {}     # données — auth n'y est PAS
+  data: {}     # données paiements — auth n'y est PAS
   ops: {}      # supervision + remédiation
+  auth-data:   # base d'authentification — auth + auth-db uniquement
+    internal: true             # aucun accès Internet ni depuis l'hôte

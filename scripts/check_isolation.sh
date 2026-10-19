@@ -2,7 +2,8 @@
 # Vérifie le cloisonnement réseau (argument cyber) :
 #   - auth NE DOIT PAS joindre db:5432 (pas sur le réseau data)
 #   - payment-api DOIT joindre db:5432
-#   - db ne publie aucun port
+#   - auth DOIT joindre auth-db:5432, payment-api NE DOIT PAS
+#   - db et auth-db ne publient aucun port
 set -u
 cd "$(dirname "$0")/.."
 
@@ -12,14 +13,24 @@ probe() {  # probe <service> <host> <port>
 }
 fail=0
 
-if probe auth db 5432; then echo "❌ auth joint db:5432 (ANORMAL)"; fail=1
-else echo "✅ auth ne joint pas db:5432"; fi
+expect_blocked() {  # expect_blocked <service> <host>
+  if probe "$1" "$2" 5432; then echo "❌ $1 joint $2:5432 (ANORMAL)"; fail=1
+  else echo "✅ $1 ne joint pas $2:5432"; fi
+}
+expect_open() {  # expect_open <service> <host>
+  if probe "$1" "$2" 5432; then echo "✅ $1 joint $2:5432"
+  else echo "❌ $1 ne joint pas $2:5432"; fail=1; fi
+}
 
-if probe payment-api db 5432; then echo "✅ payment-api joint db:5432"
-else echo "❌ payment-api ne joint pas db:5432"; fail=1; fi
+expect_blocked auth db
+expect_open    payment-api db
+expect_open    auth auth-db
+expect_blocked payment-api auth-db
 
 # Un port publié apparaît sous la forme "IP:port->5432/tcp" (un simple "5432/tcp" reste interne)
-if docker compose ps db --format '{{.Ports}}' | grep -q -- '->'; then echo "❌ db publie un port"; fail=1
-else echo "✅ db ne publie aucun port"; fi
+for svc in db auth-db; do
+  if docker compose ps "$svc" --format '{{.Ports}}' | grep -q -- '->'; then echo "❌ $svc publie un port"; fail=1
+  else echo "✅ $svc ne publie aucun port"; fi
+done
 
 exit $fail
