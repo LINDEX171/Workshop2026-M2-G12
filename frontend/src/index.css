@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  /* Statuts réservés : toujours accompagnés d'une icône et d'un libellé */
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-critical: #d03b3b;
+  --color-surface: #fcfcfb;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+}

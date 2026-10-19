@@ -69,7 +69,7 @@ services:
     environment:
       SERVICE_NAME: detector
       TZ: ${TZ:-Europe/Paris}
-    networks: [ops]
+    networks: [app, ops]       # app : agrégateur /status lu par le frontend (lecture seule)
     profiles: [ai, full]
     depends_on:
       prometheus: { condition: service_started, required: false }

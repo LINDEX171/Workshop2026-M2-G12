@@ -1,8 +1,20 @@
-# Phase 1 : sert une page provisoire. Phase 3 : build multi-stage Vite -> Nginx.
+# --- Étape 1 : build Vite ---
+FROM node:22-alpine AS build
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+ARG VITE_GRAFANA_URL=http://localhost:3000
+ENV VITE_GRAFANA_URL=$VITE_GRAFANA_URL
+RUN npm run build
+
+# --- Étape 2 : service statique Nginx non-root ---
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY placeholder/ /usr/share/nginx/html/
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 8080
 

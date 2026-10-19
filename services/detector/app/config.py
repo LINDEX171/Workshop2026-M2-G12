@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     detector_interval_sec: int = 10
     detector_threshold: float = 0.65
 
+    # Services sondés par l'agrégateur /status (tableau de bord)
+    auth_url: str = "http://auth:8000"
+    payment_url: str = "http://payment-api:8000"
+    assistant_url: str = "http://assistant:8000"
+    # Durée pendant laquelle le bandeau reste sur « APRÈS » après une reprise
+    status_after_window_sec: int = 300
+
 
 @lru_cache
 def get_settings() -> Settings:
