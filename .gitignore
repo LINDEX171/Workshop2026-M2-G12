@@ -1,0 +1,37 @@
+# --- Environnement & secrets (jamais en clair) ---
+.env
+*.env
+!.env.example
+!secrets/*.enc.env
+*.key
+*.pem
+age.txt
+keys.txt
+secrets/*.dec*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# --- Node / Frontend ---
+node_modules/
+frontend/dist/
+
+# --- Modèle ML (régénéré via scripts/train_model.sh) ---
+services/detector/model/*.pkl
+
+# --- Données locales / volumes ---
+data/
+volumes/
+services/assistant/chroma/
+*.dump
+*.sql.gz
+
+# --- Divers ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

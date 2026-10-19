@@ -1,0 +1,24 @@
+# =====================================================================
+# RESILIENCE-ALPHA — Groupe 12 — stack Docker Compose
+#
+# Profils (travail isolé) :
+#   core     : db, auth, payment-api, waf, frontend
+#   obs      : prometheus, grafana, loki, promtail, cadvisor, exporters
+#   security : waf (+ dépendances)
+#   ai       : detector, assistant, ollama
+#   attack   : load-generator
+#   full     : TOUT
+#
+# Règle d'or : seul `waf` publie des ports vers l'extérieur (443).
+# adminer / grafana -> 127.0.0.1 uniquement. `db` ne publie AUCUN port.
+# =====================================================================
+
+name: ${COMPOSE_PROJECT_NAME:-resilience-g12}
+
+services: {}
+
+networks:
+  public: {}   # seule zone exposée (waf, frontend)
+  app: {}      # trafic applicatif
+  data: {}     # données — auth n'y est PAS
+  ops: {}      # supervision + remédiation
