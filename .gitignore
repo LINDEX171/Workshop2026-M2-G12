@@ -53,3 +53,6 @@ infra/waf/banlist-ua/*.conf
 
 # --- Fichier clair temporaire du chiffrement SOPS ---
 secrets/*.plain.env
+
+# --- Journaux/mesures de démo (locaux) ---
+demo_rto.csv
