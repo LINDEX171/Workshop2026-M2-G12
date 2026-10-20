@@ -23,26 +23,28 @@ SERVICE = settings.service_name
 LOGIN_TOTAL = Counter("auth_login_total", "Tentatives de login", ["result"])
 
 
-def bootstrap_operator() -> None:
-    """Crée l'utilisateur opérateur depuis le secret operator_password."""
-    password = settings.operator_password.get_secret_value()
-    if not password:
-        log.warning("operator_bootstrap_skipped", reason="secret operator_password absent")
-        return
-    try:
-        created = db.ensure_user(
-            settings.operator_username, security.hash_password(password), "operator"
-        )
-        log.info("operator_bootstrap", username=settings.operator_username, created=created)
-    except SQLAlchemyError as exc:
-        log.error("operator_bootstrap_failed", error=str(exc))
+def bootstrap_users() -> None:
+    """Crée les utilisateurs par défaut depuis leurs secrets (operator, admin)."""
+    seeds = [
+        (settings.operator_username, settings.operator_password.get_secret_value(), "operator"),
+        (settings.admin_username, settings.admin_password.get_secret_value(), "admin"),
+    ]
+    for username, password, role in seeds:
+        if not password:
+            log.warning("user_bootstrap_skipped", username=username, reason="secret absent")
+            continue
+        try:
+            created = db.ensure_user(username, security.hash_password(password), role)
+            log.info("user_bootstrap", username=username, role=role, created=created)
+        except SQLAlchemyError as exc:
+            log.error("user_bootstrap_failed", username=username, error=str(exc))
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     if not settings.jwt_secret.get_secret_value():
         raise RuntimeError("Secret jwt_secret absent : démarrage refusé")
-    await run_in_threadpool(bootstrap_operator)
+    await run_in_threadpool(bootstrap_users)
     yield
 
 

@@ -1,13 +1,56 @@
 @import "tailwindcss";
 
 @theme {
-  /* Statuts réservés : toujours accompagnés d'une icône et d'un libellé */
-  --color-good: #0ca30c;
-  --color-warning: #fab219;
-  --color-critical: #d03b3b;
-  --color-surface: #fcfcfb;
+  /* Marque + statuts (accompagnés d'une icône/texte, jamais la couleur seule) */
+  --color-brand: #4f46e5;
+  --color-brand-dark: #4338ca;
+  --color-good: #16a34a;
+  --color-warning: #f59e0b;
+  --color-critical: #dc2626;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  @apply bg-slate-100 text-slate-800 antialiased;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- Primitives réutilisables --- */
+.card {
+  @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+}
+.card-pad {
+  @apply p-5 sm:p-6;
+}
+.card-title {
+  @apply text-sm font-semibold uppercase tracking-wide text-slate-500;
+}
+.label {
+  @apply mb-1.5 block text-xs font-medium text-slate-500;
+}
+.input {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition;
+}
+.input:focus {
+  @apply border-brand outline-none ring-2 ring-brand/20;
+}
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition;
+}
+.btn:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+.btn-primary {
+  @apply bg-brand text-white shadow-sm hover:bg-brand-dark;
+}
+.btn-ghost {
+  @apply text-slate-500 hover:bg-slate-100 hover:text-slate-800;
+}
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
 }

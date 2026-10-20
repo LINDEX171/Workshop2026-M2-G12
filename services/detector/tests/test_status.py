@@ -52,7 +52,13 @@ def test_score_endpoint():
     assert isinstance(r.json()["threshold"], float)
 
 
+def test_status_requires_auth():
+    assert client.get("/status").status_code == 401
+
+
 def test_status_endpoint(monkeypatch):
+    from app.main import require_token
+
     async def fake_services(client, urls):
         return {"detector": "ok", **{name: "ok" for name in urls}}
 
@@ -61,7 +67,11 @@ def test_status_endpoint(monkeypatch):
 
     monkeypatch.setattr(status, "collect_services", fake_services)
     monkeypatch.setattr(status, "fetch_events", fake_events)
-    r = client.get("/status")
+    app.dependency_overrides[require_token] = lambda: {"sub": "operator", "role": "operator"}
+    try:
+        r = client.get("/status")
+    finally:
+        app.dependency_overrides.clear()
     assert r.status_code == 200
     body = r.json()
     assert body["phase"] == "before"

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import httpx
 import structlog
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app import status
@@ -66,14 +66,27 @@ def current_score() -> dict:
     }
 
 
+async def require_token(authorization: str | None = Header(default=None)) -> dict:
+    """Valide le jeton auprès de auth : la vue de supervision n'est pas publique."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "Token manquant", headers={"WWW-Authenticate": "Bearer"})
+    try:
+        r = await http().get(f"{settings.auth_url}/verify", headers={"Authorization": authorization})
+    except httpx.HTTPError:
+        raise HTTPException(503, "Service d'authentification indisponible")
+    if r.status_code == 200:
+        return r.json()
+    raise HTTPException(401, "Token invalide", headers={"WWW-Authenticate": "Bearer"})
+
+
 @app.get("/score")
 async def score():
     return current_score()
 
 
 @app.get("/status")
-async def platform_status():
-    """Vue agrégée en lecture seule pour le tableau de bord du frontend."""
+async def platform_status(_: dict = Depends(require_token)):
+    """Vue agrégée pour le tableau de bord — réservée aux utilisateurs authentifiés."""
     urls = {
         "auth": settings.auth_url,
         "payment-api": settings.payment_url,

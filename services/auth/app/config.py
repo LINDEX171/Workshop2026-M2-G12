@@ -23,11 +23,13 @@ class Settings(BaseSettings):
     auth_db_user: str = "authuser"
 
     operator_username: str = "operator"
+    admin_username: str = "admin"
 
     # --- Secrets ---
     authuser_password: SecretStr = SecretStr("")
     jwt_secret: SecretStr = SecretStr("")
     operator_password: SecretStr = SecretStr("")
+    admin_password: SecretStr = SecretStr("")
 
 
 @lru_cache

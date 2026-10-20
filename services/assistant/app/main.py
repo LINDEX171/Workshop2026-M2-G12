@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 import structlog
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from prometheus_client import Counter, Histogram
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -53,8 +53,22 @@ class AskIn(BaseModel):
     question: str = Field(min_length=3, max_length=500)
 
 
+async def require_token(authorization: str | None = Header(default=None)) -> dict:
+    """Valide le jeton auprès de auth : l'assistant n'est pas public."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "Token manquant", headers={"WWW-Authenticate": "Bearer"})
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            r = await client.get(f"{settings.auth_url}/verify", headers={"Authorization": authorization})
+    except httpx.HTTPError:
+        raise HTTPException(503, "Service d'authentification indisponible")
+    if r.status_code == 200:
+        return r.json()
+    raise HTTPException(401, "Token invalide", headers={"WWW-Authenticate": "Bearer"})
+
+
 @app.post("/ask")
-async def ask(body: AskIn):
+async def ask(body: AskIn, _: dict = Depends(require_token)):
     if assistant.indexed == 0:
         raise HTTPException(status_code=503, detail="Index non prêt (Ollama/modèles en cours ?)")
     try:

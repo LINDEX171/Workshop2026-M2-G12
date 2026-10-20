@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen2.5:3b"       # LLM de réponse (<= 8 Md de paramètres)
     embed_model: str = "nomic-embed-text"  # modèle d'embeddings
 
+    # Validation des jetons : l'assistant n'est pas public
+    auth_url: str = "http://auth:8000"
+
     # Documentation indexée (montée en lecture seule) et base vectorielle.
     # Chroma dans /tmp (tmpfs) : inscriptible par appuser en conteneur read_only.
     # Reconstruite au démarrage (réindexation), donc pas besoin de volume persistant.

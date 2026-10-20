@@ -28,14 +28,27 @@ def test_health_ollama_down(monkeypatch):
     assert r.json()["deps"]["ollama"] == "ko"
 
 
+def test_ask_requires_auth():
+    assert client.post("/ask", json={"question": "Comment remédier à un DoS ?"}).status_code == 401
+
+
 def test_ask_requires_index(monkeypatch):
     main.assistant.indexed = 0
-    r = client.post("/ask", json={"question": "Comment remédier à un DoS ?"})
+    app.dependency_overrides[main.require_token] = lambda: {"sub": "operator", "role": "operator"}
+    try:
+        r = client.post("/ask", json={"question": "Comment remédier à un DoS ?"})
+    finally:
+        app.dependency_overrides.clear()
     assert r.status_code == 503
 
 
 def test_ask_too_short():
-    assert client.post("/ask", json={"question": "a"}).status_code == 422
+    app.dependency_overrides[main.require_token] = lambda: {"sub": "operator", "role": "operator"}
+    try:
+        r = client.post("/ask", json={"question": "a"})
+    finally:
+        app.dependency_overrides.clear()
+    assert r.status_code == 422
 
 
 def test_metrics():

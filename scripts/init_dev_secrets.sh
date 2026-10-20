@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 rand() { openssl rand -hex 32 | tr -d '\r\n'; }
 
 for name in pg_password payuser_password auth_db_admin_password authuser_password \
-            operator_password jwt_secret grafana_admin_password; do
+            operator_password admin_password jwt_secret grafana_admin_password; do
   f="secrets/$name.txt"
   if [ -s "$f" ] && [ "${1:-}" != "--force" ]; then
     echo "= $f existe déjà (--force pour régénérer)"

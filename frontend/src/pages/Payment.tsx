@@ -4,69 +4,13 @@ import { Account, ApiError, Transaction, api } from "../api";
 import { formatEuros, formatTime } from "../format";
 
 interface Props {
-  token: string | null;
-  onLogin: (token: string) => void;
+  token: string;
   onLogout: () => void;
 }
 
-export default function Payment({ token, onLogin, onLogout }: Props) {
-  return token ? <Dashboard token={token} onLogout={onLogout} /> : <LoginForm onLogin={onLogin} />;
-}
+const AVATAR_COLORS = ["bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-sky-500", "bg-rose-500"];
 
-const card = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm";
-const input =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none";
-const button =
-  "rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50";
-
-function LoginForm({ onLogin }: { onLogin: (token: string) => void }) {
-  const [username, setUsername] = useState("operator");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const { token } = await api.login(username, password);
-      onLogin(token);
-    } catch (err) {
-      setError(err instanceof ApiError && err.status === 401 ? "Identifiants invalides" : String((err as Error).message));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className={`${card} mx-auto max-w-sm`}>
-      <h2 className="mb-4 text-lg font-semibold">Connexion opérateur</h2>
-      <form onSubmit={submit} className="space-y-4">
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600">Utilisateur</span>
-          <input className={input} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600">Mot de passe</span>
-          <input
-            className={input}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-        </label>
-        {error && <p className="text-sm text-slate-900">⚠ {error}</p>}
-        <button className={`${button} w-full`} disabled={loading || !password}>
-          {loading ? "Connexion…" : "Se connecter"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
+export default function Payment({ token, onLogout }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [src, setSrc] = useState(1);
@@ -78,7 +22,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
 
   const handleError = useCallback(
     (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) onLogout(); // token expiré
+      if (err instanceof ApiError && err.status === 401) onLogout();
       return err instanceof Error ? err.message : String(err);
     },
     [onLogout],
@@ -107,7 +51,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
     setMessage(null);
     try {
       const tx = await api.createTransaction(token, src, dst, Number(amount));
-      setMessage({ ok: true, text: `Transaction #${tx.id} acceptée` });
+      setMessage({ ok: true, text: `Virement #${tx.id} accepté` });
     } catch (err) {
       setMessage({ ok: false, text: handleError(err) });
     } finally {
@@ -117,113 +61,114 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   }
 
   const owner = (id: number) => accounts.find((a) => a.id === id)?.owner ?? `#${id}`;
+  const total = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {loadError && (
-        <div className="rounded-lg border border-critical bg-white px-4 py-3 text-sm">
-          <span className="font-semibold text-critical">✕</span> Service de paiement indisponible : {loadError}
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-critical">
+          <span className="font-semibold">✕</span> Service de paiement indisponible : {loadError}
         </div>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {accounts.map((a) => (
-          <div key={a.id} className={card}>
-            <p className="text-sm text-slate-500">Compte #{a.id}</p>
-            <p className="text-lg font-semibold">{a.owner}</p>
-            <p className="mt-2 text-2xl font-bold tabular-nums">{formatEuros(a.balance)}</p>
+      {/* Comptes */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {accounts.map((a, i) => (
+          <div key={a.id} className="card card-pad">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
+                {a.owner[0]}
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">{a.owner}</p>
+                <p className="text-xs text-slate-400">Compte #{a.id}</p>
+              </div>
+            </div>
+            <p className="mt-4 text-2xl font-bold tabular-nums text-slate-900">{formatEuros(a.balance)}</p>
           </div>
         ))}
+        <div className="card card-pad bg-slate-900 text-white">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total plateforme</p>
+          <p className="mt-4 text-2xl font-bold tabular-nums">{formatEuros(total)}</p>
+          <p className="mt-1 text-xs text-slate-400">Conservé (intégrité)</p>
+        </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className={card}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Nouveau virement</h2>
-            <button onClick={onLogout} className="text-sm text-slate-500 hover:text-slate-900">
-              Déconnexion
-            </button>
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            <label className="block text-sm">
-              <span className="mb-1 block text-slate-600">Compte débité</span>
-              <select className={input} value={src} onChange={(e) => setSrc(Number(e.target.value))}>
+        {/* Virement */}
+        <section className="card card-pad lg:col-span-1">
+          <h2 className="card-title">Nouveau virement</h2>
+          <form onSubmit={submit} className="mt-4 space-y-4">
+            <div>
+              <label className="label">Compte débité</label>
+              <select className="input" value={src} onChange={(e) => setSrc(Number(e.target.value))}>
                 {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.owner}
-                  </option>
+                  <option key={a.id} value={a.id}>{a.owner}</option>
                 ))}
               </select>
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1 block text-slate-600">Bénéficiaire</span>
-              <select className={input} value={dst} onChange={(e) => setDst(Number(e.target.value))}>
+            </div>
+            <div>
+              <label className="label">Bénéficiaire</label>
+              <select className="input" value={dst} onChange={(e) => setDst(Number(e.target.value))}>
                 {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.owner}
-                  </option>
+                  <option key={a.id} value={a.id}>{a.owner}</option>
                 ))}
               </select>
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1 block text-slate-600">Montant (€)</span>
-              <input
-                className={input}
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </label>
+            </div>
+            <div>
+              <label className="label">Montant (€)</label>
+              <input className="input" type="number" min="0.01" step="0.01" value={amount}
+                onChange={(e) => setAmount(e.target.value)} />
+            </div>
             {message && (
-              <p className="text-sm">
-                <span className={`font-semibold ${message.ok ? "text-good" : "text-critical"}`}>
-                  {message.ok ? "✓" : "✕"}
-                </span>{" "}
-                {message.text}
+              <p className={`rounded-lg px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-good" : "bg-red-50 text-critical"}`}>
+                {message.ok ? "✓" : "✕"} {message.text}
               </p>
             )}
-            <button className={`${button} w-full`} disabled={sending || src === dst || !(Number(amount) > 0)}>
-              {sending ? "Envoi…" : "Envoyer"}
+            <button className="btn btn-primary w-full" disabled={sending || src === dst || !(Number(amount) > 0)}>
+              {sending ? "Envoi…" : "Envoyer le virement"}
             </button>
+            {src === dst && <p className="text-xs text-amber-600">Le débiteur et le bénéficiaire doivent différer.</p>}
           </form>
         </section>
 
-        <section className={`${card} lg:col-span-2`}>
-          <h2 className="mb-4 text-lg font-semibold">Dernières transactions</h2>
+        {/* Transactions */}
+        <section className="card lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h2 className="card-title">Dernières transactions</h2>
+            <span className="badge bg-slate-100 text-slate-500">{transactions.length}</span>
+          </div>
           {transactions.length === 0 ? (
-            <p className="text-sm text-slate-500">Aucune transaction pour l'instant.</p>
+            <p className="px-6 py-10 text-center text-sm text-slate-400">Aucune transaction pour l'instant.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-left text-slate-500">
-                <tr>
-                  <th className="pb-2 font-medium">#</th>
-                  <th className="pb-2 font-medium">Heure</th>
-                  <th className="pb-2 font-medium">De</th>
-                  <th className="pb-2 font-medium">Vers</th>
-                  <th className="pb-2 text-right font-medium">Montant</th>
-                  <th className="pb-2 pl-4 font-medium">Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((t) => (
-                  <tr key={t.id} className="border-t border-slate-100">
-                    <td className="py-2 tabular-nums text-slate-500">{t.id}</td>
-                    <td className="py-2 tabular-nums">{formatTime(t.created_at)}</td>
-                    <td className="py-2">{owner(t.src)}</td>
-                    <td className="py-2">{owner(t.dst)}</td>
-                    <td className="py-2 text-right tabular-nums">{formatEuros(t.amount)}</td>
-                    <td className="py-2 pl-4">
-                      <span className={`font-semibold ${t.status === "accepted" ? "text-good" : "text-critical"}`}>
-                        {t.status === "accepted" ? "✓" : "✕"}
-                      </span>{" "}
-                      {t.status === "accepted" ? "Acceptée" : "Rejetée"}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
+                    <th className="px-6 py-2 font-medium">#</th>
+                    <th className="py-2 font-medium">Heure</th>
+                    <th className="py-2 font-medium">De → Vers</th>
+                    <th className="py-2 text-right font-medium">Montant</th>
+                    <th className="px-6 py-2 text-right font-medium">Statut</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {transactions.map((t) => (
+                    <tr key={t.id} className="border-t border-slate-50 hover:bg-slate-50">
+                      <td className="px-6 py-2.5 tabular-nums text-slate-400">{t.id}</td>
+                      <td className="py-2.5 tabular-nums text-slate-500">{formatTime(t.created_at)}</td>
+                      <td className="py-2.5 text-slate-700">{owner(t.src)} <span className="text-slate-300">→</span> {owner(t.dst)}</td>
+                      <td className="py-2.5 text-right font-medium tabular-nums">{formatEuros(t.amount)}</td>
+                      <td className="px-6 py-2.5 text-right">
+                        <span className={`badge ${t.status === "accepted" ? "bg-green-50 text-good" : "bg-red-50 text-critical"}`}>
+                          {t.status === "accepted" ? "✓ Acceptée" : "✕ Rejetée"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

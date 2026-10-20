@@ -155,7 +155,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Requêtes bloquées par le WAF (15 min)",
+      "title": "Injections bloquées (ModSecurity, 15 min)",
       "gridPos": {
         "x": 12,
         "y": 0,
@@ -513,6 +513,95 @@
             "uid": "loki"
           },
           "expr": "{service=~\"payment-api|auth|detector|remediator\"} | json | level=~\"warning|error|critical\"",
+          "legendFormat": "",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Requêtes refusées par le WAF — 403 (/min)",
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({service=\"waf\"} | json | log_type=\"access\" | status=\"403\" [1m]))",
+          "legendFormat": "403 refusées",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "logs",
+      "title": "Requêtes refusées (403) — signature bannie",
+      "gridPos": {
+        "x": 12,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{service=\"waf\"} | json | log_type=\"access\" | status=\"403\"",
           "legendFormat": "",
           "queryType": "range"
         }

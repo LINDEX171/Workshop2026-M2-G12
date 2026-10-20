@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 
+import Login from "./components/Login";
 import Assistant from "./pages/Assistant";
 import Payment from "./pages/Payment";
 import Supervision from "./pages/Supervision";
@@ -8,56 +9,142 @@ type Tab = "payment" | "supervision" | "assistant";
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL ?? "http://localhost:3000";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "payment", label: "Paiement" },
-  { id: "supervision", label: "Supervision" },
-  { id: "assistant", label: "Assistant" },
+const NAV: { id: Tab; label: string; subtitle: string; icon: ReactNode }[] = [
+  {
+    id: "payment",
+    label: "Paiement",
+    subtitle: "Comptes et transactions de la plateforme",
+    icon: (
+      <path d="M3 10h18M6 15h4M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+    ),
+  },
+  {
+    id: "supervision",
+    label: "Supervision",
+    subtitle: "État des services, détection et remédiation",
+    icon: <path d="M3 12h4l2 6 4-14 2 8h6" />,
+  },
+  {
+    id: "assistant",
+    label: "Assistant",
+    subtitle: "Questions-réponses sur la documentation (RAG local)",
+    icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />,
+  },
 ];
 
+function identity(token: string): { sub: string; role: string } | null {
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(part));
+    return { sub: payload.sub, role: payload.role };
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
-  const [tab, setTab] = useState<Tab>("payment");
-  // Token JWT gardé en mémoire uniquement (jamais dans localStorage)
   const [token, setToken] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("payment");
+
+  if (!token) return <Login onLogin={setToken} />;
+
+  const me = identity(token);
+  const current = NAV.find((n) => n.id === tab)!;
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">RESILIENCE-ALPHA</h1>
-            <p className="text-sm text-slate-500">Plateforme de paiement — Groupe 12</p>
+    <div className="flex min-h-screen">
+      {/* Barre latérale */}
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+        <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-black text-white">
+            R
           </div>
-          <nav className="flex items-center gap-2">
-            {TABS.map((t) => (
+          <div className="leading-tight">
+            <p className="text-sm font-bold text-slate-900">RESILIENCE</p>
+            <p className="text-xs text-slate-400">Groupe 12</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 p-3">
+          {NAV.map((n) => (
+            <button
+              key={n.id}
+              onClick={() => setTab(n.id)}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                tab === n.id
+                  ? "bg-brand/10 text-brand"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                {n.icon}
+              </svg>
+              {n.label}
+            </button>
+          ))}
+        </nav>
+
+        <a
+          href={GRAFANA_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" />
+          </svg>
+          Grafana
+        </a>
+
+        <div className="flex items-center gap-3 border-t border-slate-200 px-4 py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-sm font-semibold uppercase text-white">
+            {me?.sub?.[0] ?? "?"}
+          </div>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-sm font-semibold text-slate-900">{me?.sub ?? "—"}</p>
+            <p className="text-xs capitalize text-slate-400">{me?.role ?? ""}</p>
+          </div>
+          <button
+            onClick={() => setToken(null)}
+            title="Déconnexion"
+            className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-critical"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      {/* Contenu */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">{current.label}</h1>
+            <p className="text-sm text-slate-500">{current.subtitle}</p>
+          </div>
+          {/* Navigation mobile */}
+          <nav className="flex gap-1 md:hidden">
+            {NAV.map((n) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-                  tab === t.id ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                key={n.id}
+                onClick={() => setTab(n.id)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  tab === n.id ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                {t.label}
+                {n.label}
               </button>
             ))}
-            <a
-              href={GRAFANA_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
-              Grafana ↗
-            </a>
           </nav>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        {tab === "payment" && (
-          <Payment token={token} onLogin={setToken} onLogout={() => setToken(null)} />
-        )}
-        {tab === "supervision" && <Supervision />}
-        {tab === "assistant" && <Assistant />}
-      </main>
+        <main className="flex-1 overflow-auto p-6">
+          {tab === "payment" && <Payment token={token} onLogout={() => setToken(null)} />}
+          {tab === "supervision" && <Supervision token={token} />}
+          {tab === "assistant" && <Assistant token={token} />}
+        </main>
+      </div>
     </div>
   );
 }

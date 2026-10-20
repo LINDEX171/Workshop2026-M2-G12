@@ -54,7 +54,7 @@ services:
     environment:
       SERVICE_NAME: auth
       TZ: ${TZ:-Europe/Paris}
-    secrets: [jwt_secret, authuser_password, operator_password]
+    secrets: [jwt_secret, authuser_password, operator_password, admin_password]
     networks: [app, auth-data] # PAS sur `data` : auth ne joint pas la BDD des paiements
     profiles: [core, full]
     depends_on:
@@ -373,6 +373,8 @@ secrets:
     file: ./secrets/authuser_password.txt
   operator_password:        # utilisateur `operator` de l'application
     file: ./secrets/operator_password.txt
+  admin_password:           # utilisateur `admin` de l'application
+    file: ./secrets/admin_password.txt
   jwt_secret:
     file: ./secrets/jwt_secret.txt
   grafana_admin_password:
