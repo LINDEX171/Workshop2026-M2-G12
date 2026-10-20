@@ -1,15 +1,23 @@
 import { ReactNode, useState } from "react";
 
 import Login from "./components/Login";
+import { Logo, LogoMark } from "./components/Logo";
 import Assistant from "./pages/Assistant";
+import Home from "./pages/Home";
 import Payment from "./pages/Payment";
 import Supervision from "./pages/Supervision";
 
-type Tab = "payment" | "supervision" | "assistant";
+type Tab = "home" | "payment" | "supervision" | "assistant";
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL ?? "http://localhost:3000";
 
 const NAV: { id: Tab; label: string; subtitle: string; icon: ReactNode }[] = [
+  {
+    id: "home",
+    label: "Accueil",
+    subtitle: "Vue d'ensemble de la plateforme",
+    icon: <path d="M3 11l9-8 9 8M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />,
+  },
   {
     id: "payment",
     label: "Paiement",
@@ -44,7 +52,7 @@ function identity(token: string): { sub: string; role: string } | null {
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("payment");
+  const [tab, setTab] = useState<Tab>("home");
 
   if (!token) return <Login onLogin={setToken} />;
 
@@ -55,14 +63,9 @@ export default function App() {
     <div className="flex min-h-screen">
       {/* Barre latérale */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-        <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-black text-white">
-            R
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-slate-900">RESILIENCE</p>
-            <p className="text-xs text-slate-400">Groupe 12</p>
-          </div>
+        <div className="border-b border-slate-200 px-5 py-4">
+          <Logo className="h-10 text-[#0B1620]" />
+          <p className="mt-1 text-xs text-slate-400">Groupe 12</p>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">
@@ -119,9 +122,12 @@ export default function App() {
       {/* Contenu */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">{current.label}</h1>
-            <p className="text-sm text-slate-500">{current.subtitle}</p>
+          <div className="flex items-center gap-3">
+            <LogoMark className="h-9 w-auto shrink-0 text-[#0B1620] md:hidden" />
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">{current.label}</h1>
+              <p className="text-sm text-slate-500">{current.subtitle}</p>
+            </div>
           </div>
           {/* Navigation mobile */}
           <nav className="flex gap-1 md:hidden">
@@ -140,7 +146,10 @@ export default function App() {
         </header>
 
         <main className="flex-1 overflow-auto p-6">
-          {tab === "payment" && <Payment token={token} onLogout={() => setToken(null)} />}
+          {tab === "home" && (
+            <Home user={me?.sub ?? null} shortcuts={NAV.filter((n) => n.id !== "home")} onOpen={setTab} />
+          )}
+          {tab === "payment" &&<Payment token={token} onLogout={() => setToken(null)} />}
           {tab === "supervision" && <Supervision token={token} />}
           {tab === "assistant" && <Assistant token={token} />}
         </main>
