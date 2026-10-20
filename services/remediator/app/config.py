@@ -25,8 +25,9 @@ class Settings(BaseSettings):
     loki_url: str = "http://loki:3100"
     # UA du probe de reprise : exclu de l'identification, ne doit jamais être banni
     probe_user_agent: str = "ResilienceProbe/1.0"
-    # Signatures légitimes à ne jamais bannir (regex), ex. le load-generator (preuve de vie)
-    signature_exclude_regex: str = "python-requests.*"
+    # Signatures légitimes à ne JAMAIS bannir (regex) : le load-generator (preuve de vie)
+    # ET les navigateurs réels (Mozilla…) pour ne pas verrouiller un opérateur par erreur.
+    signature_exclude_regex: str = "python-requests.*|Mozilla.*|.*curl.*"
     # Filet de sécurité si Loki n'a pas encore la donnée (fiabilité démo)
     fallback_attack_signature: str = "ResilienceDoS/1.0"
 
