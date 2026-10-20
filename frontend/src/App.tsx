@@ -1,15 +1,17 @@
 import { useState } from "react";
 
+import Assistant from "./pages/Assistant";
 import Payment from "./pages/Payment";
 import Supervision from "./pages/Supervision";
 
-type Tab = "payment" | "supervision";
+type Tab = "payment" | "supervision" | "assistant";
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL ?? "http://localhost:3000";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "payment", label: "Paiement" },
   { id: "supervision", label: "Supervision" },
+  { id: "assistant", label: "Assistant" },
 ];
 
 export default function App() {
@@ -50,11 +52,11 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {tab === "payment" ? (
+        {tab === "payment" && (
           <Payment token={token} onLogin={setToken} onLogout={() => setToken(null)} />
-        ) : (
-          <Supervision />
         )}
+        {tab === "supervision" && <Supervision />}
+        {tab === "assistant" && <Assistant />}
       </main>
     </div>
   );

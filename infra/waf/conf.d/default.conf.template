@@ -9,6 +9,11 @@
 #   /api/status   -> detector:8000/status (lecture seule)
 # =====================================================================
 
+# Tailles de hash des `map` : relevées pour accepter des clés longues
+# (signatures User-Agent bannies) sans erreur « could not build map_hash ».
+map_hash_bucket_size 256;
+map_hash_max_size 4096;
+
 # --- Liste d'IP bannies (écrite par le remediator, rechargée par SIGHUP) ---
 # Fichiers *.conf de infra/waf/banlist/ (partagé avec le remediator), une ligne par IP : `203.0.113.7 1;`
 # (`map` et non `geo` : seul `map` accepte un motif *.conf dans son include)
@@ -80,8 +85,9 @@ server {
     resolver 127.0.0.11 valid=10s ipv6=off;
     set $frontend_upstream http://frontend:8080;
     set $auth_upstream     http://auth:8000;
-    set $pay_upstream      http://payment-api:8000;
-    set $status_upstream   http://detector:8000;
+    set $pay_upstream       http://payment-api:8000;
+    set $status_upstream    http://detector:8000;
+    set $assistant_upstream http://assistant:8000;
 
     # X-Forwarded-For est ÉCRASÉ (pas complété) : un client ne peut pas usurper son IP
     proxy_set_header Host              $host;
@@ -128,6 +134,15 @@ server {
     location = /api/status {
         rewrite ^ /status break;
         proxy_pass $status_upstream;
+    }
+
+    # Assistant RAG : seul /ask est exposé (jamais /reindex)
+    location = /api/assistant/ask {
+        rewrite ^ /ask break;
+        proxy_pass $assistant_upstream;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 180s;
+        proxy_read_timeout 180s;   # génération LLM locale lente sur CPU (3 Md)
     }
 
     location /api/ {

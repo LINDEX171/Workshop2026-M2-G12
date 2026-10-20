@@ -97,4 +97,9 @@ export const api = {
       body: { src, dst, amount },
     }),
   status: () => request<PlatformStatus>("/api/status"),
+  ask: (question: string) =>
+    request<{ answer: string; sources: string[] }>("/api/assistant/ask", {
+      method: "POST",
+      body: { question },
+    }),
 };

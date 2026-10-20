@@ -107,6 +107,11 @@ services:
     environment:
       SERVICE_NAME: assistant
       TZ: ${TZ:-Europe/Paris}
+      HOME: /tmp                       # cache Chroma écrit sur tmpfs (conteneur read_only)
+      ANONYMIZED_TELEMETRY: "False"    # pas de télémétrie Chroma
+    volumes:
+      - ./docs:/app/knowledge/docs:ro          # doc interne indexée (lecture seule)
+      - ./README.md:/app/knowledge/README.md:ro
     networks: [app, ops]       # aucun droit Docker : lit seulement la doc
     profiles: [ai, full]
     depends_on:
