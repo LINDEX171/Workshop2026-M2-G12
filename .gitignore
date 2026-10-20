@@ -50,3 +50,6 @@ infra/waf/banlist/*.conf
 # --- Signatures bannies par la remédiation (état local) ---
 infra/waf/banlist-ua/*.conf
 !infra/waf/banlist-ua/00-base.conf
+
+# --- Fichier clair temporaire du chiffrement SOPS ---
+secrets/*.plain.env

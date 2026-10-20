@@ -1,0 +1,8 @@
+# Règles de chiffrement SOPS.
+# La clé publique age ci-dessous est renseignée par scripts/init_age_key.sh.
+# La clé PRIVÉE correspondante reste HORS dépôt (~/.config/sops/age/keys.txt),
+# partagée dans l'équipe par un canal sûr.
+creation_rules:
+  # Couvre le fichier chiffré et le fichier clair temporaire (indépendant du séparateur / ou \)
+  - path_regex: secrets.*\.env$
+    age: age10z5vvn0qx7puwghfsurrxh6slpxw3yyyy4pypk5fe2fu09cqlyqs8fanyw
