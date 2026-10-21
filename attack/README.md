@@ -13,7 +13,27 @@ et la remédiation. Scripts en Python **stdlib uniquement** (aucune dépendance)
 - **En local (tests)** : un conteneur jetable sur le réseau `public` via les scripts
   `scripts/attack_*.sh` (la cible est alors `https://waf:8443`).
 
+## Chaîne d'attaque (ordre de la démo)
+La démo suit un déroulé réaliste : **on découvre la cible avant de la frapper.**
+1. **Reconnaissance** (`recon.py`) — lister les appareils du réseau, voir ce qui est exposé.
+2. **Choix de l'angle** — la seule porte publique est le WAF → on attaque « à travers » lui.
+3. **Attaque** (`dos_attack.py`, etc.) → détection ML → remédiation → reprise vérifiée.
+
 ## Scénarios
+
+### 0. Reconnaissance réseau — `recon.py` (phase préalable)
+Balaye le sous-réseau du point d'accès, liste les hôtes vivants et leurs ports ouverts,
+et empreinte les services HTTP(S). But : **découvrir** le PC Hôte et constater que, grâce
+au durcissement, **seul le WAF (443) répond** — base de données, Prometheus, Grafana et
+services internes ne sont pas joignables. C'est ce constat qui désigne la cible.
+```bash
+# depuis le PC Attaquant (point d'accès RESILIENCE-G12)
+python recon.py --subnet 192.168.137.0/24
+# en local (tests), sur le réseau public de compose
+python recon.py --subnet 172.0.0.0/8   # ou l'IP du WAF directement
+```
+> Scan **TCP connect** volontairement visible : la supervision (SIEM/SOC) doit le voir
+> passer. Il ne touche qu'à votre SI fictif, jamais au réseau du campus.
 
 ### 1. DoS applicatif — `dos_attack.py` (scénario principal, disponibilité)
 Rafale de requêtes authentifiées (jeton bidon) sur `/api/pay/transactions`. payment-api

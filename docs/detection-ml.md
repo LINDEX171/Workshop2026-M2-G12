@@ -66,9 +66,13 @@ l'enveloppe sur les données d'entraînement est contrôlé et reporté
   entre 0 et 1 : environ 0,5 ou moins pour un point normal, proche de 1 pour un point très
   facile à isoler.
 - **Seuil d'alerte calibré** (`DETECTOR_THRESHOLD=auto`) : score maximal observé sur le
-  trafic normal d'entraînement **+ 0,05**. Ce n'est pas une valeur fixée à la main : il est
+  trafic normal d'entraînement **+ 0,10**. Ce n'est pas une valeur fixée à la main : il est
   recalculé à chaque entraînement. Une valeur numérique dans `.env` force un seuil fixe.
   Ce choix découle du diagnostic du §5 : un seuil arbitraire de 0,65 manquait des DoS.
+  La marge, d'abord de 0,05, a été portée à 0,10 après avoir observé des fausses alertes
+  (scores de 0,61 à 0,64, environ une toutes les 1 à 2 min) dues à une légère dérive du trafic
+  normal : la nouvelle interface interrogeait l'API plus souvent. Un DoS réel donne 0,97 à
+  0,999 : la détection n'est pas retardée.
 - **Explicabilité** : chaque alerte contient les 3 features les plus éloignées du trafic
   normal (écart en nombre d'écarts-types) et les valeurs brutes (p95, taux 5xx, req/s, CPU).
 - Toutes les `DETECTOR_INTERVAL_SEC` (10 s) : calcul du score, exposition (`/score`,

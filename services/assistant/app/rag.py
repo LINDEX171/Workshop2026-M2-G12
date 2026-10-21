@@ -42,11 +42,25 @@ def load_chunks(knowledge_dir: str, chunk_size: int, overlap: int) -> list[dict]
     return chunks
 
 
-def build_prompt(question: str, contexts: list[dict]) -> str:
-    """Prompt RAG : consignes + passages numérotés avec leur source + question."""
+def build_prompt(question: str, contexts: list[dict], history: list[dict] | None = None) -> str:
+    """Prompt RAG : consignes + passages avec leur source + échanges précédents + question."""
     blocks = [f"[Source: {c['source']}]\n{c['text']}" for c in contexts]
     context = "\n\n---\n\n".join(blocks) if blocks else "(aucun passage pertinent trouvé)"
-    return f"{SYSTEM_PROMPT}\n\n=== CONTEXTE ===\n{context}\n\n=== QUESTION ===\n{question}\n\n=== RÉPONSE ==="
+    conversation = ""
+    if history:
+        lines = [f"{'Utilisateur' if t['role'] == 'user' else 'Assistant'} : {t['text']}" for t in history]
+        conversation = "\n\n=== CONVERSATION PRÉCÉDENTE ===\n" + "\n".join(lines)
+    return (
+        f"{SYSTEM_PROMPT}\n\n=== CONTEXTE ===\n{context}{conversation}"
+        f"\n\n=== QUESTION ===\n{question}\n\n=== RÉPONSE ==="
+    )
+
+
+def retrieval_query(question: str, history: list[dict] | None = None) -> str:
+    """Requête de recherche : la question, enrichie de la précédente question utilisateur
+    pour que les relances courtes (« et pour le WAF ? ») retrouvent les bons passages."""
+    previous = [t["text"] for t in (history or []) if t["role"] == "user"]
+    return f"{previous[-1]}\n{question}" if previous else question
 
 
 def format_sources(contexts: list[dict]) -> list[str]:
@@ -98,11 +112,12 @@ class Assistant:
         log.info("knowledge_indexed", chunks=self.indexed)
         return self.indexed
 
-    def ask(self, question: str) -> dict:
+    def ask(self, question: str, history: list[dict] | None = None) -> dict:
         from langchain_ollama import ChatOllama
 
-        docs = self._vectorstore().similarity_search(question, k=self.settings.top_k)
+        query = retrieval_query(question, history)
+        docs = self._vectorstore().similarity_search(query, k=self.settings.top_k)
         contexts = [{"text": d.page_content, "source": d.metadata.get("source", "?")} for d in docs]
         llm = ChatOllama(model=self.settings.ollama_model, base_url=self.settings.ollama_url, temperature=0)
-        answer = llm.invoke(build_prompt(question, contexts)).content
+        answer = llm.invoke(build_prompt(question, contexts, history)).content
         return {"answer": answer, "sources": format_sources(contexts)}

@@ -9,8 +9,8 @@ et assistant. Build statique servi par Nginx, derrière le WAF.
 |---|---|---|
 | Paiement | Login, soldes, virement, transactions | `/api/auth/login`, `/api/pay/*` |
 | Supervision | Bandeau d'état, pastilles services, jauge d'anomalie, journal | `/api/status` |
-| Assistant | Questions sur la doc | `/api/assistant/ask` |
-| — | Healthcheck du conteneur | `GET /health` → 200 |
+| Assistant (bulle flottante, toutes les pages) | Questions sur la doc, conversation conservée jusqu'à la déconnexion | `/api/assistant/ask` |
+| Aucune (technique) | Healthcheck du conteneur | `GET /health` → 200 |
 
 ## 3. Variables d'environnement (build)
 | Nom | Rôle | Défaut |

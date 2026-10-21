@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Workshop2026-M2-G12 — Dossier d'ingénierie et de gouvernance</title>
+<!--
+  Source du livrable Workshop2026-M2-G12-Dossier.pdf.
+  Régénérer le PDF (Git Bash, depuis la racine du dépôt) :
+    "/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" --headless --disable-gpu \
+      --no-pdf-header-footer --print-to-pdf="$(pwd -W)/livrables/Workshop2026-M2-G12-Dossier.pdf" \
+      "file:///$(pwd -W)/docs/rendu/dossier.html"
+-->
+<style>
+  :root {
+    --navy: #0B1620;
+    --green: #0E8A66;
+    --green-soft: #E7F4EF;
+    --ink: #1F2933;
+    --muted: #5B6875;
+    --line: #D9DEE3;
+    --tint: #F4F6F8;
+    --red: #B42318;
+  }
+  @page {
+    size: A4;
+    margin: 18mm 17mm 18mm 17mm;
+    @bottom-left { content: "RESILIENCE-ALPHA · Dossier d'ingénierie et de gouvernance"; font: 8pt "Segoe UI", sans-serif; color: #8A96A3; }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Segoe UI", sans-serif; color: #8A96A3; }
+  }
+  @page :first {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font: 10pt/1.5 "Segoe UI", Arial, sans-serif; color: var(--ink); }
+  h1, h2, h3 { color: var(--navy); line-height: 1.25; }
+  h2 { font-size: 15pt; margin: 0 0 8pt; padding-top: 4pt; break-after: avoid; }
+  h2 .num { color: var(--green); margin-right: 6pt; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 6pt; text-align: justify; hyphens: auto; }
+  ul { margin: 0 0 6pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  section { margin-bottom: 14pt; }
+  .page-break { break-before: page; }
+  code { font: 8.6pt Consolas, "Courier New", monospace; background: var(--tint); padding: 0 3pt; border-radius: 3pt; white-space: nowrap; }
+  td code { white-space: normal; }
+  td:first-child code { white-space: nowrap; }
+  strong { color: var(--navy); }
+
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 8.8pt; break-inside: avoid; }
+  th { background: var(--navy); color: #fff; text-align: left; font-weight: 600; padding: 4pt 6pt; }
+  td { padding: 4pt 6pt; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #FAFBFC; }
+  td.c, th.c { text-align: center; }
+
+  .callout { background: var(--green-soft); border-radius: 6pt; padding: 8pt 11pt; margin: 6pt 0 10pt; break-inside: avoid; }
+  .callout.grey { background: var(--tint); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout p { text-align: left; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 8pt 0 12pt; }
+  .kpi { background: var(--tint); border-radius: 6pt; padding: 8pt 10pt; }
+  .kpi b { display: block; font-size: 18pt; color: var(--green); line-height: 1.1; }
+  .kpi span { font-size: 8.3pt; color: var(--muted); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+  .figure { margin: 6pt 0 10pt; break-inside: avoid; }
+  .caption { font-size: 8pt; color: var(--muted); text-align: center; margin-top: 3pt; }
+  .tag { display: inline-block; font-size: 7.5pt; font-weight: 600; padding: 1pt 5pt; border-radius: 8pt; background: var(--green-soft); color: var(--green); }
+  .tag.warn { background: #FDECEA; color: var(--red); }
+  .todo { background: #FFF4D6; }
+
+  /* --- Couverture --- */
+  .cover { height: 297mm; display: flex; flex-direction: column; background: var(--navy); color: #fff; padding: 26mm 22mm 20mm; position: relative; overflow: hidden;
+           background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+           background-size: 9mm 9mm; }
+  .cover .halo { position: absolute; right: -60mm; bottom: -60mm; width: 170mm; height: 170mm; border-radius: 50%; background: radial-gradient(circle, rgba(14,138,102,.35), rgba(14,138,102,0) 70%); }
+  .cover .logo { width: 95mm; filter: brightness(0) invert(1); }
+  .cover .logo-color { width: 95mm; }
+  .cover .eyebrow { margin-top: 48mm; font-size: 10pt; letter-spacing: 2.5pt; text-transform: uppercase; color: #6EE7B7; font-weight: 600; }
+  .cover h1 { color: #fff; font-size: 30pt; margin: 6mm 0 4mm; font-weight: 700; letter-spacing: -.3pt; }
+  .cover .sub { font-size: 13pt; color: #CBD5E1; max-width: 140mm; line-height: 1.45; }
+  .cover .meta { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; border-top: 1px solid rgba(255,255,255,.15); padding-top: 7mm; font-size: 9pt; color: #94A3B8; position: relative; }
+  .cover .meta b { display: block; color: #fff; font-size: 10.5pt; margin-top: 1mm; font-weight: 600; }
+
+  .toc { columns: 2; column-gap: 14pt; font-size: 9.5pt; margin: 4pt 0 10pt; }
+  .toc div { break-inside: avoid; padding: 2pt 0; border-bottom: 1px dotted var(--line); }
+  .toc span { color: var(--green); font-weight: 700; margin-right: 5pt; }
+</style>
+</head>
+<body>
+
+<!-- =================== COUVERTURE =================== -->
+<div class="cover">
+  <div class="halo"></div>
+  <img class="logo-color" src="../../frontend/src/components/resilience-alpha-logo.svg" alt="Resilience Alpha"
+       style="background:#fff;border-radius:4mm;padding:4mm 6mm;width:100mm">
+  <div class="eyebrow">Workshop national Bac+5 · EPSI · Octobre 2026</div>
+  <h1>Dossier d'ingénierie<br>et de gouvernance</h1>
+  <div class="sub">Une plateforme de paiement fictive qui subit une attaque, la détecte par
+    Machine Learning, se répare seule et prouve sa reprise par une transaction réussie.</div>
+  <div class="meta">
+    <div>Consortium<b>Workshop2026-M2-G12</b></div>
+    <div>Projet<b>PROJECT RESILIENCE-ALPHA</b></div>
+    <div>Livrable<b>Workshop2026-M2-G12-Dossier.pdf</b></div>
+  </div>
+</div>
+
+<!-- =================== 1. SYNTHÈSE =================== -->
+<section>
+  <h2><span class="num">1</span>Synthèse</h2>
+  <p>RESILIENCE-ALPHA est un démonstrateur de <strong>cyber-résilience</strong> : un SI de paiement
+    fictif composé de microservices conteneurisés, une attaque par déni de service applicatif lancée
+    depuis un PC distinct, une détection par <strong>Machine Learning</strong> (Isolation Forest et
+    enveloppe statistique apprises sur du trafic normal), puis une remédiation <strong>Zero-Touch</strong>
+    exécutée par des playbooks Ansible. La reprise n'est déclarée que lorsqu'une <strong>vraie
+    transaction authentifiée</strong> traverse à nouveau le WAF et réussit.</p>
+  <div class="kpis">
+    <div class="kpi"><b>10 / 10</b><span>reprises autonomes sur 10 démonstrations rejouées</span></div>
+    <div class="kpi"><b>≈ 47 s</b><span>RTO médian de bout en bout (début de l'attaque → transaction réussie)</span></div>
+    <div class="kpi"><b>0 / 151</b><span>fausse alerte du modèle sur le trafic normal d'entraînement</span></div>
+    <div class="kpi"><b>1 port</b><span>exposé : le WAF (443). Base, secrets et admin jamais publiés</span></div>
+  </div>
+  <p>Les cinq domaines exigés sont couverts et reliés entre eux : le <strong>développement</strong> (API,
+    authentification, remédiation, interface React), l'<strong>infrastructure</strong> (Docker Compose, Ansible,
+    Prometheus, Grafana, Loki), l'<strong>IA</strong> (détection ML, assistant RAG Ollama + LangChain), la
+    <strong>cybersécurité</strong> (WAF ModSecurity, SOC Grafana, SOPS, cloisonnement) et la
+    <strong>gouvernance</strong> (EBIOS RM, PCA/PRA, NIS2/DORA). Ce dossier présente les décisions
+    structurantes ; les détails techniques sont dans le dépôt Git, auquel chaque section renvoie.</p>
+  <div class="toc">
+    <div><span>2</span>Contexte et périmètre</div>
+    <div><span>3</span>Architecture et flux</div>
+    <div><span>4</span>Rôle des composants</div>
+    <div><span>5</span>L'incident retenu</div>
+    <div><span>6</span>Détection par Machine Learning</div>
+    <div><span>7</span>Remédiation Zero-Touch</div>
+    <div><span>8</span>Résultats des essais</div>
+    <div><span>9</span>Sécurité de la plateforme</div>
+    <div><span>10</span>Analyse des risques (EBIOS RM)</div>
+    <div><span>11</span>PCA / PRA</div>
+    <div><span>12</span>NIS2, DORA et recommandations</div>
+    <div><span>13</span>Limites et passage à l'échelle</div>
+    <div><span>14</span>Contributions de l'équipe</div>
+    <div><span>A</span>Annexe : index du dépôt</div>
+  </div>
+</section>
+
+<!-- =================== 2. CONTEXTE =================== -->
+<section>
+  <h2><span class="num">2</span>Contexte et périmètre</h2>
+  <p>Le commanditaire fictif exploite une plateforme de paiement dont les incidents sont aujourd'hui
+    réparés à la main, lentement et de façon peu reproductible. Notre objectif n'est pas un système
+    infaillible mais une chaîne <strong>observable et vérifiable</strong> : collecter les signaux, repérer
+    l'anomalie, décider, agir, puis prouver que le métier fonctionne à nouveau.</p>
+  <div class="two">
+    <div class="callout grey">
+      <p><strong>Ce que nous protégeons en priorité</strong></p>
+      <ul>
+        <li>La <strong>disponibilité</strong> du virement (valeur métier critique).</li>
+        <li>L'<strong>intégrité</strong> des soldes et du journal des transactions.</li>
+        <li>La <strong>confidentialité</strong> des comptes et des identifiants.</li>
+      </ul>
+    </div>
+    <div class="callout grey">
+      <p><strong>Périmètre du démonstrateur</strong></p>
+      <ul>
+        <li>Données et opérations 100 % fictives (3 comptes, virements simulés).</li>
+        <li>PC Hôte sur le point d'accès <code>RESILIENCE-G12</code> (<code>192.168.137.1</code>).</li>
+        <li>Attaques limitées à notre SI ; aucune cible campus ou tierce.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 3. ARCHITECTURE =================== -->
+<section class="page-break">
+  <h2><span class="num">3</span>Architecture et flux</h2>
+  <p>La plateforme tourne sur le PC Hôte sous Docker Compose. Le <strong>WAF est l'unique point
+    d'entrée</strong> ; derrière lui, cinq réseaux Docker cloisonnent les flux selon le besoin d'en connaître.</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 700 300" width="100%" font-family="Segoe UI, Arial" font-size="11">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#5B6875"/>
+        </marker>
+        <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#0E8A66"/>
+        </marker>
+      </defs>
+      <!-- zones réseau -->
+      <rect x="120" y="8" width="572" height="120" rx="10" fill="#F4F6F8"/>
+      <text x="132" y="24" fill="#5B6875" font-size="9.5" font-weight="600">public · app · data · auth-data — chemin métier</text>
+      <rect x="120" y="140" width="572" height="150" rx="10" fill="#E7F4EF"/>
+      <text x="132" y="156" fill="#0E8A66" font-size="9.5" font-weight="600">ops — observabilité, détection, remédiation (aucun port publié)</text>
+
+      <!-- attaquant -->
+      <rect x="6" y="48" width="96" height="46" rx="8" fill="#FDECEA" stroke="#B42318"/>
+      <text x="54" y="68" text-anchor="middle" font-weight="700" fill="#B42318">PC Attaquant</text>
+      <text x="54" y="83" text-anchor="middle" fill="#B42318" font-size="9.5">dos_attack.py</text>
+
+      <!-- chemin métier -->
+      <rect x="136" y="48" width="92" height="46" rx="8" fill="#0B1620"/>
+      <text x="182" y="68" text-anchor="middle" fill="#fff" font-weight="700">WAF</text>
+      <text x="182" y="83" text-anchor="middle" fill="#CBD5E1" font-size="9">ModSecurity · 443</text>
+      <rect x="256" y="34" width="92" height="30" rx="7" fill="#fff" stroke="#0B1620"/>
+      <text x="302" y="53" text-anchor="middle">frontend</text>
+      <rect x="256" y="78" width="92" height="30" rx="7" fill="#fff" stroke="#0B1620"/>
+      <text x="302" y="97" text-anchor="middle">auth</text>
+      <rect x="376" y="48" width="104" height="46" rx="8" fill="#fff" stroke="#0B1620" stroke-width="2"/>
+      <text x="428" y="68" text-anchor="middle" font-weight="700">payment-api</text>
+      <text x="428" y="83" text-anchor="middle" fill="#5B6875" font-size="9">virements</text>
+      <rect x="508" y="34" width="80" height="30" rx="7" fill="#fff" stroke="#0B1620"/>
+      <text x="548" y="53" text-anchor="middle">db</text>
+      <rect x="508" y="78" width="80" height="30" rx="7" fill="#fff" stroke="#0B1620"/>
+      <text x="548" y="97" text-anchor="middle">auth-db</text>
+
+      <line x1="102" y1="71" x2="134" y2="71" stroke="#B42318" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="228" y1="64" x2="254" y2="50" stroke="#5B6875" marker-end="url(#a)"/>
+      <line x1="228" y1="78" x2="254" y2="92" stroke="#5B6875" marker-end="url(#a)"/>
+      <line x1="228" y1="71" x2="374" y2="71" stroke="#5B6875" marker-end="url(#a)" stroke-dasharray="0"/>
+      <line x1="480" y1="62" x2="506" y2="50" stroke="#5B6875" marker-end="url(#a)"/>
+      <line x1="348" y1="93" x2="506" y2="93" stroke="#5B6875" marker-end="url(#a)"/>
+
+      <!-- ops -->
+      <rect x="136" y="172" width="104" height="44" rx="8" fill="#fff" stroke="#0E8A66"/>
+      <text x="188" y="191" text-anchor="middle" font-weight="600">Prometheus</text>
+      <text x="188" y="206" text-anchor="middle" fill="#5B6875" font-size="9">métriques /5 s</text>
+      <rect x="400" y="232" width="104" height="44" rx="8" fill="#fff" stroke="#0E8A66"/>
+      <text x="452" y="251" text-anchor="middle" font-weight="600">Loki · Promtail</text>
+      <text x="452" y="266" text-anchor="middle" fill="#5B6875" font-size="9">journaux JSON</text>
+      <rect x="268" y="172" width="104" height="44" rx="8" fill="#0E8A66"/>
+      <text x="320" y="191" text-anchor="middle" fill="#fff" font-weight="700">detector</text>
+      <text x="320" y="206" text-anchor="middle" fill="#D1FAE5" font-size="9">Isolation Forest</text>
+      <rect x="400" y="172" width="104" height="44" rx="8" fill="#0E8A66"/>
+      <text x="452" y="191" text-anchor="middle" fill="#fff" font-weight="700">remediator</text>
+      <text x="452" y="206" text-anchor="middle" fill="#D1FAE5" font-size="9">Ansible</text>
+      <rect x="532" y="172" width="148" height="44" rx="8" fill="#fff" stroke="#0E8A66"/>
+      <text x="606" y="191" text-anchor="middle" font-weight="600">docker-socket-proxy</text>
+      <text x="606" y="206" text-anchor="middle" fill="#5B6875" font-size="9">restart / kill uniquement</text>
+      <rect x="268" y="232" width="104" height="44" rx="8" fill="#fff" stroke="#0E8A66"/>
+      <text x="320" y="251" text-anchor="middle" font-weight="600">Alertmanager</text>
+      <text x="320" y="266" text-anchor="middle" fill="#5B6875" font-size="9">2e voie d'alerte</text>
+      <rect x="136" y="232" width="104" height="44" rx="8" fill="#fff" stroke="#0E8A66"/>
+      <text x="188" y="251" text-anchor="middle" font-weight="600">Grafana</text>
+      <text x="188" y="266" text-anchor="middle" fill="#5B6875" font-size="9">technique + SOC</text>
+
+      <line x1="428" y1="94" x2="200" y2="170" stroke="#0E8A66" stroke-dasharray="4 3" marker-end="url(#ag)"/>
+      <line x1="240" y1="194" x2="266" y2="194" stroke="#0E8A66" stroke-width="2" marker-end="url(#ag)"/>
+      <line x1="372" y1="194" x2="398" y2="194" stroke="#0E8A66" stroke-width="2" marker-end="url(#ag)"/>
+      <line x1="504" y1="194" x2="530" y2="194" stroke="#0E8A66" stroke-width="2" marker-end="url(#ag)"/>
+      <line x1="372" y1="244" x2="420" y2="218" stroke="#0E8A66" marker-end="url(#ag)"/>
+      <line x1="452" y1="232" x2="452" y2="218" stroke="#0E8A66" stroke-dasharray="3 2" marker-end="url(#ag)"/>
+      <path d="M606 172 C606 130 300 140 214 96" fill="none" stroke="#0E8A66" stroke-width="2" marker-end="url(#ag)"/>
+      <text x="684" y="122" text-anchor="end" fill="#0E8A66" font-size="9.5" font-weight="600">ban de la signature + restart</text>
+    </svg>
+    <div class="caption">Figure 1 — Chemin métier (en haut) et boucle de résilience (en bas). Seul le WAF publie un port.</div>
+  </div>
+
+  <h3>Cloisonnement réseau</h3>
+  <table>
+    <tr><th>Réseau</th><th>Membres</th><th>Justification</th></tr>
+    <tr><td><code>public</code></td><td>waf, frontend, load-generator</td><td>Seule zone joignable depuis l'extérieur.</td></tr>
+    <tr><td><code>app</code></td><td>services applicatifs, prometheus</td><td>Trafic applicatif interne.</td></tr>
+    <tr><td><code>data</code></td><td>payment-api, db, adminer, postgres-exporter</td><td>Données de paiement ; <strong>auth n'y est pas</strong> (pas de rebond latéral).</td></tr>
+    <tr><td><code>auth-data</code></td><td>auth, auth-db</td><td>Réseau <code>internal</code> : aucun accès Internet ni depuis l'hôte.</td></tr>
+    <tr><td><code>ops</code></td><td>observabilité, detector, remediator, proxy Docker, ollama</td><td>Supervision et remédiation séparées du métier.</td></tr>
+  </table>
+
+  <h3>Flux d'un incident</h3>
+  <p><strong>1.</strong> Le PC Attaquant inonde <code>/api/pay/transactions</code> via le WAF.
+    <strong>2.</strong> Prometheus collecte la latence, le CPU, les erreurs de payment-api toutes les 5 s.
+    <strong>3.</strong> Le detector calcule un score d'anomalie toutes les 10 s ; au-delà du seuil calibré, il
+    envoie une alerte expliquée au remediator (Alertmanager fournit une seconde voie fondée sur des règles).
+    <strong>4.</strong> Le remediator identifie la signature de l'attaquant dans les journaux du WAF (Loki), la
+    bannit et, si besoin, redémarre payment-api via Ansible. <strong>5.</strong> Il rejoue une transaction
+    réelle à travers le WAF : la reprise n'est validée que si elle réussit et que le service se déclare sain.</p>
+</section>
+
+<!-- =================== 4. COMPOSANTS =================== -->
+<section>
+  <h2><span class="num">4</span>Rôle des composants</h2>
+  <table>
+    <tr><th style="width:21%">Composant</th><th style="width:16%">Technologie</th><th>Rôle</th></tr>
+    <tr><td><strong>frontend</strong></td><td>React, Vite, Tailwind</td><td>Connexion, virements, supervision AVANT / PENDANT / APRÈS, assistant. Servi par Nginx non-root.</td></tr>
+    <tr><td><strong>auth</strong></td><td>FastAPI, bcrypt, JWT</td><td>Authentification, émission et validation des jetons, rôles <code>operator</code> / <code>admin</code>.</td></tr>
+    <tr><td><strong>payment-api</strong></td><td>FastAPI, PostgreSQL</td><td>Comptes et virements atomiques (débit + crédit + journal), métriques métier.</td></tr>
+    <tr><td><strong>detector</strong></td><td>scikit-learn</td><td>Score d'anomalie ML, alerte expliquée au remediator, vue d'état agrégée pour l'interface.</td></tr>
+    <tr><td><strong>remediator</strong></td><td>FastAPI, ansible-runner</td><td>Table de décision, playbooks, vérification de reprise, journal d'événements.</td></tr>
+    <tr><td><strong>assistant</strong></td><td>Ollama, LangChain, Chroma</td><td>RAG sur la documentation de l'équipe, modèle <code>qwen2.5:3b</code> ; lecture seule.</td></tr>
+    <tr><td><strong>db / auth-db</strong></td><td>PostgreSQL 16</td><td>Deux bases séparées, rôles applicatifs à moindre privilège, aucun port publié.</td></tr>
+    <tr><td><strong>waf</strong></td><td>Nginx, ModSecurity, OWASP CRS</td><td>TLS, blocage SQLi/XSS, limitation des logins, listes de bannissement rechargées à chaud.</td></tr>
+    <tr><td><strong>docker-socket-proxy</strong></td><td>Tecnativa</td><td>Seul accès Docker du remediator : lecture des conteneurs, <em>restart</em> et <em>kill</em> uniquement.</td></tr>
+    <tr><td><strong>Prometheus / Alertmanager</strong></td><td>Prometheus 2.55</td><td>Métriques de tous les services ; règles d'alerte (panne, 5xx, latence) vers le remediator.</td></tr>
+    <tr><td><strong>Loki / Promtail</strong></td><td>Grafana Loki 3.2</td><td>Centralisation des journaux JSON étiquetés par service ; source du SOC et de l'identification de l'attaquant.</td></tr>
+    <tr><td><strong>Grafana</strong></td><td>Grafana 11.3</td><td>Dashboard technique, dashboard SOC, alerte brute force (LogQL).</td></tr>
+    <tr><td><strong>cAdvisor / postgres-exporter</strong></td><td>—</td><td>CPU et RAM par conteneur ; activité de la base (requêtes SQL actives).</td></tr>
+    <tr><td><strong>load-generator</strong></td><td>Locust</td><td>Trafic opérateur normal : bruit de fond de la démo et données d'entraînement du modèle.</td></tr>
+    <tr><td><strong>Ansible</strong></td><td>Ansible, SOPS + age</td><td><code>deploy.yml</code> / <code>reset.yml</code> pour le déploiement ; 4 playbooks de remédiation.</td></tr>
+  </table>
+  <p>Le déploiement est reproductible : <code>ansible-playbook ansible/deploy.yml</code> déchiffre les secrets,
+    génère le certificat TLS, construit les images et démarre la stack. Le README racine décrit l'installation
+    en cinq commandes et chaque service possède son propre README (rôle, endpoints, variables, tests).</p>
+</section>
+
+<!-- =================== 5. INCIDENT =================== -->
+<section>
+  <h2><span class="num">5</span>L'incident retenu</h2>
+  <p><strong>Scénario principal : déni de service applicatif.</strong> <code>attack/dos_attack.py</code>
+    (Python standard, sans dépendance) envoie pendant 40 s, avec 60 connexions concurrentes, des requêtes
+    authentifiées par un jeton invalide sur <code>/api/pay/transactions</code>. Chaque requête oblige payment-api
+    à interroger auth : la latence p95 et le CPU explosent, les virements légitimes ralentissent puis échouent.
+    Ce scénario est <strong>crédible</strong> (il passe le WAF, qui ne bloque que des charges malveillantes),
+    <strong>reproductible</strong> (paramètres fixes, rejoué 10 fois) et sa réponse automatique est
+    <strong>mesurable</strong>.</p>
+  <table>
+    <tr><th>Scénario</th><th>Objectif attaquant</th><th>Réponse attendue</th><th>Mécanisme</th></tr>
+    <tr><td>DoS applicatif</td><td>Disponibilité</td><td><span class="tag">Reprise</span></td><td>Détection ML → ban de la signature + restart → transaction de preuve</td></tr>
+    <tr><td>Injection SQL / XSS</td><td>Compromission</td><td><span class="tag warn">Prévention</span></td><td>WAF en blocage (403), requêtes paramétrées, rôle SQL sans UPDATE/DELETE</td></tr>
+    <tr><td>Brute force</td><td>Vol de compte</td><td><span class="tag warn">Prévention</span></td><td>bcrypt, limite WAF 30 logins/min (429), alerte SOC &gt; 10 échecs/min</td></tr>
+  </table>
+  <div class="callout">
+    <p><strong>Disponibilité ≠ compromission.</strong> Redémarrer un service rétablit la disponibilité mais ne
+      corrige pas une fuite ou une injection réussie. Pour ces cas, la réponse est la prévention, la détection
+      dans le SOC et une investigation humaine (<code>docs/runbooks/compromission.md</code>).</p>
+  </div>
+</section>
+
+<!-- =================== 6. DÉTECTION ML =================== -->
+<section>
+  <h2><span class="num">6</span>Détection par Machine Learning</h2>
+  <p>La détection n'utilise <strong>aucun seuil métier écrit à la main</strong> : elle apprend le comportement
+    normal de payment-api et mesure l'écart à ce comportement.</p>
+  <div class="two">
+    <div>
+      <h3>Données et préparation</h3>
+      <ul>
+        <li><strong>Source</strong> : API Prometheus, fenêtre glissante de 1 min.</li>
+        <li><strong>8 features</strong> : requêtes/s, ratio 5xx, latence p95, CPU, RAM, requêtes SQL actives,
+          ratio de transactions échouées, disponibilité (<code>up</code>).</li>
+        <li><strong>Entraînement</strong> : 25 min de trafic normal (Locust), 1 point / 10 s → 151 échantillons.</li>
+        <li>Valeurs manquantes à 0, instants sans trafic exclus, standardisation, léger bruit sur les features
+          constantes pour qu'une explosion reste isolable.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Modèle hybride</h3>
+      <ul>
+        <li><strong>Isolation Forest</strong> (200 arbres, non supervisé) : repère les combinaisons inhabituelles.</li>
+        <li><strong>Enveloppe statistique</strong> : déclenche si au moins 2 indicateurs dépassent 6 dispersions.</li>
+        <li>Score = max des deux ; <strong>seuil calibré</strong> = pire score normal + 0,10.</li>
+        <li>Chaque alerte cite les 3 indicateurs les plus anormaux (explicabilité).</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Pourquoi un modèle hybride ?</h3>
+  <p>Le premier modèle (Isolation Forest seul) <strong>saturait</strong> : sous 300 utilisateurs simulés, avec des
+    requêtes/s à 120 écarts-types du normal, son score restait à 0,506, sous le seuil. L'Isolation Forest mesure
+    la facilité à isoler un point, pas l'ampleur de l'écart. L'enveloppe statistique compense ce défaut tout en
+    restant apprise sur les mêmes données.</p>
+  <table>
+    <tr><th>Mesure (modèle hybride, plateforme réelle)</th><th class="c">Valeur</th></tr>
+    <tr><td>Score du trafic normal : médiane / p99 / max</td><td class="c">0,406 / 0,517 / 0,558</td></tr>
+    <tr><td>Seuil calibré automatiquement</td><td class="c">0,608</td></tr>
+    <tr><td>Déclenchements sur le trafic normal d'entraînement</td><td class="c">0 / 151</td></tr>
+    <tr><td>Première alerte lors d'une montée en charge</td><td class="c">dès ≈ 14 req/s, score 0,972</td></tr>
+    <tr><td>Explication fournie</td><td class="c">latence p95 +26,6 σ · req/s +21,7 σ · CPU +17,2 σ</td></tr>
+    <tr><td>Score au plus fort de la charge (Isolation Forest seul)</td><td class="c">0,999 (0,536)</td></tr>
+    <tr><td>Délai detector → remediator</td><td class="c">7 ms</td></tr>
+  </table>
+  <p><strong>Limites constatées</strong> : données d'entraînement courtes et simulées ; risque d'empoisonnement si
+    une attaque survient pendant la collecte ; un seul service modélisé ; une dégradation d'un seul indicateur
+    reste volontairement sous le seuil (couverte par les règles Prometheus) ; la fenêtre de 1 min impose
+    20 à 40 s de détection ; réentraînement nécessaire à chaque évolution (<code>docs/detection-ml.md</code>).</p>
+</section>
+
+<!-- =================== 7. REMÉDIATION =================== -->
+<section>
+  <h2><span class="num">7</span>Remédiation Zero-Touch</h2>
+  <p style="text-align:left">Le remediator reçoit les alertes du detector et d'Alertmanager, les normalise puis applique une table de
+    décision. Une seule remédiation s'exécute à la fois ; chaque étape est journalisée
+    (<code>detected → running → recovered | escalated</code>) et affichée dans l'interface et dans Grafana.</p>
+  <table>
+    <tr><th>Type d'incident</th><th>Action 1</th><th>Escalade</th><th>Preuve de reprise</th></tr>
+    <tr><td><code>availability_dos</code></td><td>Bannir la signature de l'attaquant au WAF</td><td>Redémarrer payment-api</td><td rowspan="3">Transaction authentifiée via le WAF = 200 <em>et</em> <code>/health</code> sain</td></tr>
+    <tr><td><code>service_down</code></td><td>Redémarrer le service</td><td>Recréer depuis l'image de référence</td></tr>
+    <tr><td><code>data_incoherent</code></td><td>Restaurer le dernier dump sain</td><td>Intervention humaine</td></tr>
+  </table>
+  <p><strong>Identification de l'attaquant.</strong> Derrière Docker Desktop, toutes les requêtes semblent venir de
+    la passerelle Docker : l'IP source n'est pas exploitable. Le remediator interroge donc Loki pour trouver le
+    User-Agent le plus émetteur des deux dernières minutes (hors trafic légitime et sonde de preuve) et bannit
+    cette <strong>signature</strong>. Le mécanisme de bannissement par IP reste en place pour un réseau réel.</p>
+  <p><strong>Sécurité du moteur.</strong> Le remediator a besoin de droits sur les conteneurs : il ne touche jamais
+    le socket Docker brut, passe par un proxy limité à <em>restart</em> et <em>kill</em>, n'expose aucun port,
+    et le WAF se recharge par fichier partagé + signal, sans interface d'administration ouverte.</p>
+</section>
+
+<!-- =================== 8. RÉSULTATS =================== -->
+<section class="page-break">
+  <h2><span class="num">8</span>Résultats des essais</h2>
+  <p>La démonstration complète (<code>scripts/demo.sh</code>) est rejouée dix fois par
+    <code>scripts/demo_replay.sh</code>, avec une remise à l'état initial entre chaque essai. Le RTO est mesuré du
+    lancement de l'attaque jusqu'à la transaction de preuve réussie, sans aucune action humaine.</p>
+  <div class="figure">
+    <svg viewBox="0 0 660 230" width="100%" font-family="Segoe UI, Arial" font-size="10">
+      <!-- axes -->
+      <line x1="50" y1="190" x2="640" y2="190" stroke="#D9DEE3"/>
+      <g fill="#5B6875" text-anchor="end">
+        <text x="42" y="193">0 s</text><text x="42" y="143">20 s</text><text x="42" y="93">40 s</text><text x="42" y="43">60 s</text>
+      </g>
+      <g stroke="#EEF1F4"><line x1="50" y1="140" x2="640" y2="140"/><line x1="50" y1="90" x2="640" y2="90"/></g>
+      <!-- objectif 60 s : y = 190 - 60*2.5 = 40 -->
+      <line x1="50" y1="40" x2="640" y2="40" stroke="#B42318" stroke-dasharray="5 4"/>
+      <text x="636" y="34" text-anchor="end" fill="#B42318" font-weight="600">objectif RTO &lt; 60 s</text>
+      <!-- barres : hauteur = rto*2.5 ; pas 58 px -->
+      <g fill="#0E8A66">
+        <rect x="64"  y="157.5" width="38" height="32.5" rx="3"/>
+        <rect x="122" y="70"    width="38" height="120"  rx="3"/>
+        <rect x="180" y="72.5"  width="38" height="117.5" rx="3"/>
+        <rect x="238" y="70"    width="38" height="120"  rx="3"/>
+        <rect x="296" y="70"    width="38" height="120"  rx="3"/>
+        <rect x="354" y="72.5"  width="38" height="117.5" rx="3"/>
+        <rect x="412" y="75"    width="38" height="115"  rx="3"/>
+        <rect x="470" y="72.5"  width="38" height="117.5" rx="3"/>
+        <rect x="528" y="62.5"  width="38" height="127.5" rx="3"/>
+        <rect x="586" y="77.5"  width="38" height="112.5" rx="3"/>
+      </g>
+      <g fill="#0B1620" text-anchor="middle" font-weight="700">
+        <text x="83" y="151">13</text><text x="141" y="64">48</text><text x="199" y="66">47</text><text x="257" y="64">48</text>
+        <text x="315" y="64">48</text><text x="373" y="66">47</text><text x="431" y="69">46</text><text x="489" y="66">47</text>
+        <text x="547" y="56">51</text><text x="605" y="71">45</text>
+      </g>
+      <g fill="#5B6875" text-anchor="middle">
+        <text x="83" y="206">#1</text><text x="141" y="206">#2</text><text x="199" y="206">#3</text><text x="257" y="206">#4</text>
+        <text x="315" y="206">#5</text><text x="373" y="206">#6</text><text x="431" y="206">#7</text><text x="489" y="206">#8</text>
+        <text x="547" y="206">#9</text><text x="605" y="206">#10</text>
+      </g>
+      <text x="345" y="224" text-anchor="middle" fill="#5B6875">Essai (toutes les reprises sont autonomes : 10 OK / 10)</text>
+    </svg>
+    <div class="caption">Figure 2 — RTO de bout en bout par essai, en secondes (source : <code>demo_rto.csv</code>).</div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b>10 / 10</b><span>reprises sans intervention humaine</span></div>
+    <div class="kpi"><b>47 s</b><span>RTO médian (min 13 s, max 51 s)</span></div>
+    <div class="kpi"><b>20–40 s</b><span>part de la détection (fenêtre de 1 min)</span></div>
+    <div class="kpi"><b>74</b><span>tests unitaires sur les 5 microservices</span></div>
+  </div>
+  <p><strong>Lecture.</strong> L'essentiel du RTO vient du temps de détection : les features sont calculées sur une
+    fenêtre d'une minute, il faut donc 20 à 40 s pour que l'attaque y pèse suffisamment. La remédiation elle-même
+    (bannissement, redémarrage éventuel, transaction de preuve) prend ensuite une quinzaine de secondes. Le premier
+    essai, plus court, a été détecté plus tôt. Réduire la fenêtre accélérerait la détection mais augmenterait le
+    risque de fausse alerte : nous avons privilégié la fiabilité, l'objectif de 60 s étant tenu.</p>
+  <h3>Vérifications complémentaires</h3>
+  <table>
+    <tr><th>Script</th><th>Ce qui est vérifié</th></tr>
+    <tr><td><code>smoke_test.sh</code></td><td>Login, virement accepté, refus sans jeton et avec jeton forgé, cohérence des soldes.</td></tr>
+    <tr><td><code>check_waf.sh</code></td><td>HTTPS, routage, blocage SQLi/XSS en 403, surfaces internes masquées.</td></tr>
+    <tr><td><code>check_isolation.sh</code></td><td>auth ne joint pas la base des paiements ; aucune base ne publie de port.</td></tr>
+    <tr><td><code>check_observability.sh</code></td><td>Toutes les cibles Prometheus actives, logs présents dans Loki, dashboards provisionnés.</td></tr>
+  </table>
+</section>
+
+<!-- =================== 9. SÉCURITÉ =================== -->
+<section>
+  <h2><span class="num">9</span>Sécurité de la plateforme</h2>
+  <table>
+    <tr><th style="width:24%">Mesure</th><th>Mise en œuvre</th></tr>
+    <tr><td>Exposition minimale</td><td>Seul le WAF publie 443/80 ; Grafana et Adminer sur <code>127.0.0.1</code> uniquement ; bases sans port.</td></tr>
+    <tr><td>Filtrage applicatif</td><td>ModSecurity + OWASP CRS 4.8 en mode blocage, paranoïa 1, journal d'audit JSON.</td></tr>
+    <tr><td>Fonction SOC</td><td>Dashboard SOC Grafana : échecs de connexion par IP/utilisateur, injections bloquées, 403, remédiations, chronologie.</td></tr>
+    <tr><td>Durcissement</td><td>Conteneurs en lecture seule, <code>cap_drop: ALL</code>, <code>no-new-privileges</code>, utilisateurs non-root, images épinglées.</td></tr>
+    <tr><td>Moindre privilège</td><td>Rôles SQL limités, journal des transactions en ajout seul, proxy Docker restreint, assistant sans droit.</td></tr>
+    <tr><td>Secrets</td><td>SOPS + age : seul <code>secrets.enc.env</code> est versionné ; déchiffrement au déploiement en secrets Docker.</td></tr>
+    <tr><td>Traçabilité</td><td>Journaux JSON horodatés centralisés dans Loki (72 h), journal d'événements du remediator.</td></tr>
+  </table>
+</section>
+
+<!-- =================== 10. EBIOS =================== -->
+<section>
+  <h2><span class="num">10</span>Analyse des risques — EBIOS Risk Manager</h2>
+  <p>L'analyse suit les cinq ateliers de la méthode et s'appuie sur l'architecture réellement livrée
+    (<code>docs/ebios/ebios-rm.md</code>).</p>
+  <table>
+    <tr><th>Valeur métier</th><th>Biens supports</th><th>Événement redouté</th><th class="c">Gravité</th></tr>
+    <tr><td>Paiement disponible</td><td>payment-api, db, waf</td><td>Indisponibilité (DoS)</td><td class="c"><strong>Critique</strong></td></tr>
+    <tr><td>Intégrité des transactions</td><td>db (schéma payments)</td><td>Altération des soldes</td><td class="c"><strong>Critique</strong></td></tr>
+    <tr><td>Confidentialité des comptes</td><td>auth, auth-db, db</td><td>Vol d'identifiants ou de données</td><td class="c">Majeure</td></tr>
+    <tr><td>Traçabilité</td><td>Loki, Grafana SOC</td><td>Perte de journaux, action non tracée</td><td class="c">Modérée</td></tr>
+  </table>
+  <table>
+    <tr><th>Scénario opérationnel</th><th>Mesures en place</th><th>Risque résiduel</th></tr>
+    <tr><td>DoS sur le paiement</td><td>Détection ML, ban de signature, restart, preuve</td><td>Attaque lente sous le seuil ; IP masquée</td></tr>
+    <tr><td>SQLi / XSS</td><td>WAF, requêtes paramétrées, rôles SQL limités</td><td>Contournement de règle WAF</td></tr>
+    <tr><td>Brute force</td><td>bcrypt, limite 30/min, alerte SOC</td><td>Pas de MFA</td></tr>
+    <tr><td>Rebond latéral</td><td>auth hors du réseau <code>data</code></td><td>Faible</td></tr>
+    <tr><td>Abus du moteur de remédiation</td><td>Proxy Docker restreint, aucun port publié</td><td>Faible</td></tr>
+  </table>
+  <p><strong>Objectifs retenus</strong> : RTO du paiement &lt; 60 s (mesuré : 47 s médian) ; RPO ≈ 0 pour les
+    transactions validées, écrites de façon atomique et jamais rejouées ; 100 % de reprise autonome sur le
+    scénario DoS (10/10 mesuré).</p>
+</section>
+
+<!-- =================== 11. PCA/PRA =================== -->
+<section>
+  <h2><span class="num">11</span>PCA / PRA</h2>
+  <table>
+    <tr><th>Scénario</th><th>Mode</th><th>Mécanisme</th><th class="c">RTO</th><th class="c">RPO</th></tr>
+    <tr><td>DoS applicatif</td><td>Reprise auto</td><td>detector → ban + restart → vérification</td><td class="c">≈ 47 s</td><td class="c">≈ 0</td></tr>
+    <tr><td>payment-api arrêté</td><td>Reprise auto</td><td><code>service_down</code> → restart → recréation</td><td class="c">&lt; 1 min</td><td class="c">≈ 0</td></tr>
+    <tr><td>Données incohérentes</td><td>Reprise assistée</td><td>Restauration du dernier dump sain</td><td class="c">selon volume</td><td class="c">dernier dump</td></tr>
+    <tr><td>SQLi / brute force</td><td>Continuité</td><td>WAF, limitation, SOC : aucune interruption</td><td class="c">—</td><td class="c">—</td></tr>
+  </table>
+  <div class="two">
+    <div>
+      <h3>Responsabilités</h3>
+      <ul>
+        <li><strong>Automate</strong> : détection, décision, action, vérification, journalisation.</li>
+        <li><strong>Opérateur</strong> : intervient seulement sur un événement <code>escalated</code>, guidé par les
+          runbooks et l'assistant RAG.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Risques subsistant après reprise</h3>
+      <ul>
+        <li>Attaquant qui change de signature à chaque vague.</li>
+        <li>Sauvegardes de base non planifiées (restauration non industrialisée).</li>
+        <li>Dérive du modèle après une évolution applicative.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 12. NIS2/DORA =================== -->
+<section>
+  <h2><span class="num">12</span>NIS2, DORA et recommandations</h2>
+  <p>Pour une activité financière, DORA (règlement UE 2022/2554) s'applique en priorité ; NIS2 (directive UE
+    2022/2555) fixe le socle de gestion des risques. Nous distinguons ce que le prototype <strong>démontre</strong>
+    de ce qui relève d'une démarche organisationnelle impossible à prouver en quatre jours
+    (<code>docs/nis2-dora.md</code>).</p>
+  <table>
+    <tr><th>Exigence</th><th>Démontré dans le prototype</th><th>Hors de portée d'un prototype</th></tr>
+    <tr><td>Gestion des risques TIC</td><td>EBIOS RM relié à l'architecture</td><td>Gouvernance et cartographie formalisées</td></tr>
+    <tr><td>Gestion des incidents</td><td>Détection, remédiation, classification, journal</td><td>Notification réglementaire 24 h / 72 h</td></tr>
+    <tr><td>Tests de résilience</td><td>10 démonstrations rejouées, 3 scénarios d'attaque</td><td>Tests d'intrusion tiers, TLPT</td></tr>
+    <tr><td>Continuité</td><td>PCA/PRA, RTO mesuré</td><td>Sauvegardes planifiées et tests de restauration</td></tr>
+    <tr><td>Sécurité des accès</td><td>JWT, rôles, chiffrement TLS, secrets SOPS</td><td>MFA, PKI, revues d'accès</td></tr>
+    <tr><td>Risque tiers TIC</td><td>Images épinglées par version</td><td>Registre et clauses fournisseurs</td></tr>
+  </table>
+  <div class="callout">
+    <p><strong>Nos recommandations à une direction, par priorité</strong> : (1) industrialiser les sauvegardes et
+      tester la restauration, condition d'un vrai PRA ; (2) ajouter la MFA et une CI de sécurité (SAST/DAST) ;
+      (3) formaliser le processus d'incident et de notification ; (4) étendre la détection à auth et aux
+      journaux. Chaque décision s'appuie sur un élément vérifiable : RTO mesuré, journaux, résultats des tests.</p>
+  </div>
+</section>
+
+<!-- =================== 13. LIMITES =================== -->
+<section>
+  <h2><span class="num">13</span>Limites et passage à l'échelle</h2>
+  <table>
+    <tr><th style="width:30%">Limite du démonstrateur</th><th>Ce que nous ferions en contexte industriel</th></tr>
+    <tr><td>IP source masquée par Docker Desktop, bannissement par User-Agent</td><td>Réseau hôte ou orchestrateur exposant l'IP réelle, bannissement par IP et réputation.</td></tr>
+    <tr><td>Modèle appris sur 25 min de trafic simulé</td><td>Plusieurs semaines d'historique réel, réentraînement planifié, surveillance de la dérive.</td></tr>
+    <tr><td>Détection en 20 à 40 s (fenêtre de 1 min)</td><td>Fenêtres multiples (courte + longue) et features par client.</td></tr>
+    <tr><td><code>rollback_image.yml</code> et <code>restore_db.yml</code> sont des squelettes</td><td>Images taguées par version, sauvegardes <code>pg_dump</code> planifiées et restauration testée.</td></tr>
+    <tr><td>Compte de preuve = <code>operator</code></td><td>Compte de sonde dédié à moindre privilège.</td></tr>
+    <tr><td>Mono-poste, Docker Compose</td><td>Kubernetes multi-nœuds, réplicas, haute disponibilité de la base.</td></tr>
+    <tr><td>Rétention des journaux de 72 h</td><td>Rétention conforme aux obligations, archivage, SIEM corrélé.</td></tr>
+  </table>
+  <p>Ces limites sont assumées : elles résultent d'arbitrages faits pour garantir une démonstration fiable en quatre
+    jours. Elles sont documentées dans le dépôt pour que le jury puisse vérifier chacune d'elles.</p>
+</section>
+
+<!-- =================== 14. CONTRIBUTIONS =================== -->
+<section>
+  <h2><span class="num">14</span>Contributions de l'équipe</h2>
+  <p>Chaque membre a porté un domaine principal ; les décisions d'architecture ont été prises en commun.</p>
+  <table>
+    <tr><th style="width:22%">Membre</th><th style="width:22%">Domaine principal</th><th>Contributions</th></tr>
+    <tr class="todo"><td>[Prénom Nom]</td><td>Développement</td><td>[À compléter : ex. payment-api, auth, frontend React]</td></tr>
+    <tr class="todo"><td>[Prénom Nom]</td><td>Infrastructure</td><td>[À compléter : ex. Docker Compose, Ansible, observabilité]</td></tr>
+    <tr class="todo"><td>[Prénom Nom]</td><td>IA / Data</td><td>[À compléter : ex. modèle de détection, assistant RAG]</td></tr>
+    <tr class="todo"><td>[Prénom Nom]</td><td>Cybersécurité</td><td>[À compléter : ex. WAF, SOC, scénarios d'attaque, SOPS]</td></tr>
+    <tr class="todo"><td>[Prénom Nom]</td><td>Gouvernance</td><td>[À compléter : ex. EBIOS RM, PCA/PRA, NIS2/DORA]</td></tr>
+  </table>
+</section>
+
+<!-- =================== ANNEXE =================== -->
+<section>
+  <h2><span class="num">A</span>Annexe : index du dépôt Git</h2>
+  <table>
+    <tr><th style="width:38%">Emplacement</th><th>Contenu</th></tr>
+    <tr><td><code>README.md</code></td><td>Architecture, installation en 5 commandes, démo, accès, dépannage.</td></tr>
+    <tr><td><code>services/*/README.md</code></td><td>Documentation d'API de chaque microservice (endpoints, variables, tests).</td></tr>
+    <tr><td><code>docs/architecture.md</code>, <code>docs/remediation.md</code></td><td>Choix structurants, moteur de remédiation.</td></tr>
+    <tr><td><code>docs/detection-ml.md</code></td><td>Données, préparation, modèle, résultats et limites de la détection.</td></tr>
+    <tr><td><code>docs/assistant-rag.md</code>, <code>docs/secrets.md</code></td><td>Assistant local, gestion des secrets SOPS + age.</td></tr>
+    <tr><td><code>docs/ebios/</code>, <code>docs/pca-pra.md</code>, <code>docs/nis2-dora.md</code></td><td>Gouvernance.</td></tr>
+    <tr><td><code>docs/runbooks/</code></td><td>Procédures DoS et compromission.</td></tr>
+    <tr><td><code>attack/</code>, <code>scripts/</code>, <code>ansible/</code>, <code>infra/</code></td><td>Attaques, démo et vérifications, déploiement, configurations.</td></tr>
+  </table>
+  <div class="callout grey">
+    <p><strong>Rejouer la démonstration</strong> : <code>./scripts/reset_demo.sh</code> puis <code>./scripts/demo.sh</code>
+      (ou <code>./scripts/demo_replay.sh 10</code> pour la série complète).</p>
+  </div>
+</section>
+
+</body>
+</html>

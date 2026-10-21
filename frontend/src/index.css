@@ -2,8 +2,8 @@
 
 @theme {
   /* Marque + statuts (accompagnés d'une icône/texte, jamais la couleur seule) */
-  --color-brand: #4f46e5;
-  --color-brand-dark: #4338ca;
+  --color-brand: #0e8a66;
+  --color-brand-dark: #0b7557;
   --color-good: #16a34a;
   --color-warning: #f59e0b;
   --color-critical: #dc2626;
@@ -53,4 +53,79 @@ body {
 }
 .badge {
   @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+
+/* --- Pile de cartes en 3D (page de connexion) --- */
+@property --spread {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+.card-stack {
+  perspective: 1400px;
+  --spread: 1;
+  transition: --spread 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.card-stack:hover {
+  --spread: 1.9;
+}
+/* Plan incliné sur lequel les cartes sont posées, qui oscille lentement */
+.card-stack-plane {
+  transform-style: preserve-3d;
+  transform: rotateX(54deg) rotateZ(-32deg);
+  animation: stack-sway 12s ease-in-out infinite;
+}
+@keyframes stack-sway {
+  0%, 100% { transform: rotateX(54deg) rotateZ(-32deg); }
+  50%      { transform: rotateX(48deg) rotateZ(-24deg); }
+}
+/* Chaque carte : hauteur dans la pile (--z), légère respiration verticale */
+.card-layer {
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--z) * var(--spread)));
+  animation: card-bob 6s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes card-bob {
+  0%, 100% { transform: translateZ(calc(var(--z) * var(--spread))); }
+  50%      { transform: translateZ(calc(var(--z) * var(--spread) + 14px)); }
+}
+/* Ombre portée sur le « sol » sous la pile */
+.card-stack-shadow {
+  transform: translateZ(-30px) scale(0.95);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0));
+  filter: blur(18px);
+}
+/* --- Assistant flottant --- */
+/* Bulle : trois petits rebonds à l'apparition, puis immobile */
+.assistant-launcher {
+  animation: assistant-nudge 1.2s ease-in-out 1s 3;
+}
+@keyframes assistant-nudge {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  30%      { transform: translateY(-6px) rotate(-6deg); }
+  60%      { transform: translateY(0) rotate(4deg); }
+}
+/* Halo pulsé tant qu'une réponse n'a pas été lue */
+.assistant-halo {
+  animation: assistant-halo 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes assistant-halo {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+/* Ouverture du panneau */
+.assistant-panel {
+  animation: assistant-open 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: bottom right;
+}
+@keyframes assistant-open {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-stack-plane, .card-layer { animation: none; }
+  .card-stack { transition: none; }
+  .assistant-launcher, .assistant-halo, .assistant-panel { animation: none; }
 }

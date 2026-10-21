@@ -1,4 +1,4 @@
-# BUILD PLAN — PROJECT RESILIENCE-ALPHA — Groupe 12
+# BUILD PLAN — PROJECT RESILIENCE-ALPHA
 
 > **À destination de Claude Code.** Ce fichier est le cahier des charges d'exécution du projet. Il est organisé en **phases** et en **étapes numérotées**. Chaque étape finit par un bloc **✅ Validation** (ce qu'il faut vérifier) et, aux jalons, par un marqueur **→ COMMIT**. **Ne rédige PAS les messages de commit** : laisse l'équipe les écrire. Arrête-toi à la fin de chaque phase pour permettre à l'équipe de reprendre la main.
 >
@@ -575,7 +575,7 @@ La séquence doit se dérouler **sans main humaine** : attaque → score monte �
 
 ### 12.A README racine (`README.md`)
 Doit contenir, dans l'ordre :
-1. Titre, groupe 12, pitch du projet (3 lignes).
+1. Titre, pitch du projet (3 lignes).
 2. Schéma d'architecture (ASCII + lien image), les 4 réseaux, le flux incident→reprise.
 3. Prérequis (Docker Desktop/WSL2, RAM, SOPS/age, Ansible).
 4. **Installation en 5 commandes** (clone → clé age → `make build` → déploiement Ansible → `make up`).

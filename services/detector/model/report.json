@@ -1,8 +1,8 @@
 {
-  "trained_at": "2026-10-19T14:31:22.708638+00:00",
-  "n_samples": 151,
+  "trained_at": "2026-10-21T10:46:56.836115+00:00",
+  "n_samples": 129,
   "n_estimators": 200,
-  "threshold": 0.608,
+  "threshold": 0.655,
   "envelope": {
     "sigma": 6.0,
     "min_features": 2,
@@ -10,17 +10,17 @@
     "false_alerts_on_train": 0
   },
   "score_train": {
-    "p50": 0.4057,
-    "p95": 0.4893,
-    "p99": 0.5171,
-    "max": 0.5578
+    "p50": 0.3894,
+    "p95": 0.4866,
+    "p99": 0.5438,
+    "max": 0.555
   },
   "feature_stats": {
     "req_rate": {
-      "min": 2.0184,
-      "mean": 2.2022,
-      "max": 2.4002,
-      "scale": 0.5506
+      "min": 0.556,
+      "mean": 2.1976,
+      "max": 2.4911,
+      "scale": 0.5494
     },
     "err_ratio": {
       "min": 0.0,
@@ -29,34 +29,34 @@
       "scale": 0.001
     },
     "p95_latency": {
-      "min": 0.0239,
-      "mean": 0.0404,
-      "max": 0.0453,
-      "scale": 0.0101
+      "min": 0.0097,
+      "mean": 0.0172,
+      "max": 0.024,
+      "scale": 0.0055
     },
     "cpu": {
-      "min": 0.02,
-      "mean": 0.0246,
-      "max": 0.0305,
-      "scale": 0.0061
+      "min": 0.004,
+      "mean": 0.0146,
+      "max": 0.0233,
+      "scale": 0.0037
     },
     "ram_mb": {
-      "min": 90.3168,
-      "mean": 90.7716,
-      "max": 90.8411,
-      "scale": 22.6929
+      "min": 85.8685,
+      "mean": 85.8685,
+      "max": 85.8685,
+      "scale": 21.4671
     },
     "db_active": {
       "min": 1.0,
-      "mean": 1.2252,
-      "max": 2.0,
-      "scale": 0.4177
+      "mean": 1.2016,
+      "max": 3.0,
+      "scale": 0.42
     },
     "tx_fail_ratio": {
       "min": 0.0,
-      "mean": 0.0174,
-      "max": 0.1515,
-      "scale": 0.0349
+      "mean": 0.0,
+      "max": 0.0,
+      "scale": 0.001
     },
     "up": {
       "min": 1.0,
@@ -67,7 +67,7 @@
   },
   "window_minutes": 25,
   "step_seconds": 10,
-  "threshold_margin": 0.05,
+  "threshold_margin": 0.1,
   "features": [
     "req_rate",
     "err_ratio",

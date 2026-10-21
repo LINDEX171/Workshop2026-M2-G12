@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from typing import Literal
 
 import httpx
 import structlog
@@ -49,8 +50,14 @@ app = FastAPI(title=SERVICE, lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
 
 
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str = Field(max_length=2000)
+
+
 class AskIn(BaseModel):
     question: str = Field(min_length=3, max_length=500)
+    history: list[Turn] = Field(default_factory=list, max_length=6)
 
 
 async def require_token(authorization: str | None = Header(default=None)) -> dict:
@@ -73,7 +80,8 @@ async def ask(body: AskIn, _: dict = Depends(require_token)):
         raise HTTPException(status_code=503, detail="Index non prêt (Ollama/modèles en cours ?)")
     try:
         with ASK_LATENCY.time():
-            result = await run_in_threadpool(assistant.ask, body.question)
+            history = [t.model_dump() for t in body.history]
+            result = await run_in_threadpool(assistant.ask, body.question, history)
     except Exception as exc:
         ASK_TOTAL.labels(result="error").inc()
         log.error("ask_failed", error=str(exc))

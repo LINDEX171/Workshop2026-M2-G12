@@ -15,6 +15,7 @@
         dest: "{{ banlist_ua_dir }}/ban-attacker.conf"
         content: "\"{{ ban_ua }}\" 1;\n"
         mode: "0644"
+      register: ua_ban
       when: ban_ua is defined and ban_ua | length > 0
 
     - name: Bannir l'IP (si exploitable)
@@ -22,11 +23,16 @@
         dest: "{{ banlist_ip_dir }}/ban-{{ ban_ip }}.conf"
         content: "{{ ban_ip }} 1;\n"
         mode: "0644"
+      register: ip_ban
       when: ban_ip is defined and ban_ip | length > 0
 
+    # Rechargement uniquement si une liste a réellement changé : un attaquant déjà banni
+    # ne justifie pas de recharger le point d'entrée unique de la plateforme.
     - name: Recharger le WAF (SIGHUP via le proxy Docker)
       ansible.builtin.uri:
         url: "{{ docker_proxy_url }}/containers/{{ waf_container_id }}/kill?signal=HUP"
         method: POST
         status_code: [204]
-      when: waf_container_id is defined and waf_container_id | length > 0
+      when:
+        - waf_container_id is defined and waf_container_id | length > 0
+        - (ua_ban is changed) or (ip_ban is changed)

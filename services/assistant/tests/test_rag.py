@@ -1,4 +1,4 @@
-from app.rag import build_prompt, format_sources, load_chunks
+from app.rag import build_prompt, format_sources, load_chunks, retrieval_query
 
 
 def test_load_chunks_reads_md_and_txt(tmp_path):
@@ -32,6 +32,27 @@ def test_build_prompt_includes_context_and_sources():
 
 def test_build_prompt_no_context():
     assert "aucun passage pertinent" in build_prompt("question ?", [])
+
+
+def test_build_prompt_includes_history():
+    history = [
+        {"role": "user", "text": "Comment remédier à un DoS ?"},
+        {"role": "assistant", "text": "Le remediator bannit la signature."},
+    ]
+    prompt = build_prompt("Et combien de temps ?", [], history)
+    assert "CONVERSATION PRÉCÉDENTE" in prompt
+    assert "Utilisateur : Comment remédier à un DoS ?" in prompt
+    assert "Assistant : Le remediator bannit la signature." in prompt
+    assert "CONVERSATION" not in build_prompt("question ?", [])
+
+
+def test_retrieval_query_uses_previous_user_question():
+    history = [
+        {"role": "user", "text": "Comment remédier à un DoS ?"},
+        {"role": "assistant", "text": "réponse"},
+    ]
+    assert retrieval_query("Et pour le WAF ?", history) == "Comment remédier à un DoS ?\nEt pour le WAF ?"
+    assert retrieval_query("question ?", []) == "question ?"
 
 
 def test_format_sources_dedup_keeps_order():

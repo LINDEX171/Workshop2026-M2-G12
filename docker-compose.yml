@@ -1,5 +1,5 @@
 # =====================================================================
-# RESILIENCE-ALPHA — Groupe 12 — stack Docker Compose
+# RESILIENCE-ALPHA — stack Docker Compose
 #
 # Profils (travail isolé) :
 #   core     : db, auth-db, adminer, auth, payment-api, waf, frontend

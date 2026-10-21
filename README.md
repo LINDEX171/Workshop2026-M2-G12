@@ -2,7 +2,7 @@
   <img src="frontend/src/components/resilience-alpha-logo.svg" alt="Resilience Alpha" width="360">
 </p>
 
-# RESILIENCE-ALPHA — Groupe 12
+# RESILIENCE-ALPHA
 
 Plateforme de paiement fictive conteneurisée qui **subit une attaque**, la **détecte par
 Machine Learning**, se **répare toute seule** (Zero-Touch Recovery) et **prouve la reprise**

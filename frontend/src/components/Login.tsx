@@ -1,6 +1,7 @@
 import { FormEvent, ReactNode, useState } from "react";
 
 import { ApiError, api } from "../api";
+import CardStack from "./CardStack";
 import { Logo } from "./Logo";
 
 // Grille discrète en fond du panneau de marque
@@ -57,6 +58,9 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
 
         <Logo className="relative h-12" />
 
+        {/* Les 3 cartes empilées en 3D (soulevées et écartées au survol) ; réduites sur les écrans bas */}
+        <CardStack className="mx-auto h-[18rem] w-full max-w-[28rem] shrink-0 [@media(max-height:820px)]:h-[13rem] [@media(max-height:820px)]:scale-[0.72]" />
+
         <div className="relative max-w-md">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">
             Paiements résilients,
@@ -77,7 +81,7 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
           </ul>
         </div>
 
-        <p className="relative text-xs text-slate-500">© 2026 Resilience Alpha · Groupe 12</p>
+        <p className="relative text-xs text-slate-500">© 2026 Resilience Alpha</p>
       </aside>
 
       {/* Formulaire */}

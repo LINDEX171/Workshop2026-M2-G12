@@ -97,10 +97,10 @@ export const api = {
       body: { src, dst, amount },
     }),
   status: (token: string) => request<PlatformStatus>("/api/status", { token }),
-  ask: (token: string, question: string) =>
+  ask: (token: string, question: string, history: { role: "user" | "assistant"; text: string }[] = []) =>
     request<{ answer: string; sources: string[] }>("/api/assistant/ask", {
       method: "POST",
       token,
-      body: { question },
+      body: { question, history },
     }),
 };

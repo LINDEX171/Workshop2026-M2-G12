@@ -30,7 +30,10 @@ JITTER_RATIO = 0.02
 JITTER_FLOOR = 1e-3
 
 # Seuil calibré = score Isolation Forest maximal observé sur le trafic normal + marge.
-THRESHOLD_MARGIN = 0.05
+# 0,05 s'est révélé trop serré : une légère dérive du trafic normal (nouvelle interface qui
+# interroge l'API plus souvent) suffisait à dépasser le seuil (fausses alertes à 0,61-0,64).
+# Un DoS réel donne 0,97 à 0,999 : 0,10 laisse une large marge sans retarder la détection.
+THRESHOLD_MARGIN = 0.10
 
 # Enveloppe : dispersion de référence = max(écart-type observé, 25 % de la moyenne, plancher).
 # Le plancher relatif évite qu'un indicateur très stable en normal (ex. toujours 4

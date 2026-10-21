@@ -56,3 +56,6 @@ secrets/*.plain.env
 
 # --- Journaux/mesures de démo (locaux) ---
 demo_rto.csv
+
+# --- Livrables générés (PDF, PPTX) : rendus à part, pas dans le zip du code ---
+livrables/

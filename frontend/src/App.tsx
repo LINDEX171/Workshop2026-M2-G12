@@ -1,13 +1,13 @@
 import { ReactNode, useState } from "react";
 
+import AssistantWidget from "./components/AssistantWidget";
 import Login from "./components/Login";
 import { Logo, LogoMark } from "./components/Logo";
-import Assistant from "./pages/Assistant";
 import Home from "./pages/Home";
 import Payment from "./pages/Payment";
 import Supervision from "./pages/Supervision";
 
-type Tab = "home" | "payment" | "supervision" | "assistant";
+type Tab = "home" | "payment" | "supervision";
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL ?? "http://localhost:3000";
 
@@ -31,12 +31,6 @@ const NAV: { id: Tab; label: string; subtitle: string; icon: ReactNode }[] = [
     label: "Supervision",
     subtitle: "État des services, détection et remédiation",
     icon: <path d="M3 12h4l2 6 4-14 2 8h6" />,
-  },
-  {
-    id: "assistant",
-    label: "Assistant",
-    subtitle: "Questions-réponses sur la documentation (RAG local)",
-    icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />,
   },
 ];
 
@@ -65,7 +59,6 @@ export default function App() {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="border-b border-slate-200 px-5 py-4">
           <Logo className="h-10 text-[#0B1620]" />
-          <p className="mt-1 text-xs text-slate-400">Groupe 12</p>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">
@@ -104,7 +97,7 @@ export default function App() {
             {me?.sub?.[0] ?? "?"}
           </div>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-semibold text-slate-900">{me?.sub ?? "—"}</p>
+            <p className="truncate text-sm font-semibold text-slate-900">{me?.sub ?? "Utilisateur"}</p>
             <p className="text-xs capitalize text-slate-400">{me?.role ?? ""}</p>
           </div>
           <button
@@ -147,13 +140,15 @@ export default function App() {
 
         <main className="flex-1 overflow-auto p-6">
           {tab === "home" && (
-            <Home user={me?.sub ?? null} shortcuts={NAV.filter((n) => n.id !== "home")} onOpen={setTab} />
+            <Home token={token} user={me?.sub ?? null} shortcuts={NAV.filter((n) => n.id !== "home")} onOpen={setTab} />
           )}
           {tab === "payment" &&<Payment token={token} onLogout={() => setToken(null)} />}
           {tab === "supervision" && <Supervision token={token} />}
-          {tab === "assistant" && <Assistant token={token} />}
         </main>
       </div>
+
+      {/* Assistant flottant, disponible sur toutes les pages (démonté à la déconnexion) */}
+      <AssistantWidget token={token} />
     </div>
   );
 }
