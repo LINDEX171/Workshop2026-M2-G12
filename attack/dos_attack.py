@@ -24,7 +24,8 @@ import urllib.error
 import urllib.request
 
 STOP = threading.Event()
-BANNED = threading.Event()  # passe à True dès qu'on voit un 403 (signature bannie)
+BANNED = threading.Event()      # passe à True dès qu'on voit un 403 (signature bannie)
+PRE_BANNED = threading.Event()  # True si on était DÉJÀ banni avant même d'attaquer
 LOCK = threading.Lock()
 # Répartition des réponses observées : c'est elle qui raconte si l'attaque passe ou est bloquée.
 STATS = {"403_banni": 0, "401": 0, "2xx": 0, "autres": 0, "erreur": 0}
@@ -60,11 +61,26 @@ def worker(url: str, user_agent: str, ctx: ssl.SSLContext) -> None:
         bucket = classify(code)
         with LOCK:
             STATS[bucket] += 1
-        # Première preuve que le WAF nous bloque : on l'annonce une seule fois.
-        if bucket == "403_banni" and not BANNED.is_set():
+        # Première preuve que le WAF nous bloque PENDANT l'attaque : la remédiation vient
+        # d'agir. Si on était déjà banni au départ (PRE_BANNED), on ne le confond pas.
+        if bucket == "403_banni" and not BANNED.is_set() and not PRE_BANNED.is_set():
             BANNED.set()
             print("⛔ BLOQUÉ par le WAF (403) — notre signature "
-                  f"{user_agent!r} est bannie. La remédiation a fonctionné.")
+                  f"{user_agent!r} vient d'être bannie. La remédiation a agi EN DIRECT.")
+
+
+def probe(url: str, user_agent: str, ctx: ssl.SSLContext) -> int | None:
+    """Une requête d'essai avant le flood : sommes-nous déjà bloqués ?"""
+    req = urllib.request.Request(
+        url, data=b'{"dst":2,"amount":1}', method="POST",
+        headers={"Content-Type": "application/json",
+                 "Authorization": "Bearer flood-no-valid-token", "User-Agent": user_agent})
+    try:
+        return urllib.request.urlopen(req, timeout=5, context=ctx).status
+    except urllib.error.HTTPError as e:
+        return e.code
+    except Exception:
+        return None
 
 
 def main() -> None:
@@ -81,6 +97,14 @@ def main() -> None:
     ctx.verify_mode = ssl.CERT_NONE
 
     print(f"[attack] cible {url} | {args.concurrency} threads | {args.duration}s | UA {args.user_agent}")
+
+    # Sonde préalable : si on est DÉJÀ banni, ce n'est pas la remédiation de CE run.
+    if probe(url, args.user_agent, ctx) == 403:
+        PRE_BANNED.set()
+        print(f"⚠ DÉJÀ BANNI avant l'attaque : la signature {args.user_agent!r} était "
+              "bannie par un run précédent.\n  Pour une démo propre, réinitialise le WAF : "
+              "./scripts/reset_ban.sh (sur le PC Hôte).")
+
     threads = [threading.Thread(target=worker, args=(url, args.user_agent, ctx), daemon=True)
                for _ in range(args.concurrency)]
     for t in threads:
@@ -94,9 +118,13 @@ def main() -> None:
     print(f"[attack] terminé — {total} requêtes envoyées")
     print(f"         403 banni : {STATS['403_banni']} | 401 : {STATS['401']} | "
           f"2xx : {STATS['2xx']} | autres : {STATS['autres']} | erreurs : {STATS['erreur']}")
-    if BANNED.is_set():
-        # Majorité de 403 = le WAF nous refuse d'entrée : l'attaque n'a plus d'effet.
-        print("➡  Verdict : attaquant BANNI. Le WAF bloque notre signature au point d'entrée.")
+    if PRE_BANNED.is_set():
+        print("➡  Verdict : on était DÉJÀ banni avant ce run (ban résiduel). "
+              "Réinitialise le WAF (./scripts/reset_ban.sh) pour rejouer la séquence proprement.")
+    elif BANNED.is_set():
+        # Bascule 401 -> 403 observée pendant l'attaque : la remédiation a agi en direct.
+        print("➡  Verdict : attaquant BANNI EN DIRECT. Le WAF a bloqué notre signature "
+              "pendant l'attaque — la remédiation fonctionne.")
     else:
         print("➡  Verdict : attaque passée (aucun 403). Si c'est le 1er run, la remédiation "
               "devrait bannir la signature sous peu — relancez pour voir le blocage.")
