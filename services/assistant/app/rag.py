@@ -16,7 +16,7 @@ from app.config import Settings
 log = structlog.get_logger()
 
 SYSTEM_PROMPT = """Tu es l'assistant interne du projet RESILIENCE-ALPHA (plateforme de \
-paiement conteneurisée). Réponds en français, de façon concise et factuelle, en \
+paiement conteneurisée). Réponds en français, en 3 à 5 phrases maximum, de façon factuelle, en \
 t'appuyant UNIQUEMENT sur le contexte fourni. Si l'information ne figure pas dans le \
 contexte, dis-le clairement sans inventer. Cite les sources utilisées."""
 
@@ -112,12 +112,27 @@ class Assistant:
         log.info("knowledge_indexed", chunks=self.indexed)
         return self.indexed
 
-    def ask(self, question: str, history: list[dict] | None = None) -> dict:
+    def _llm(self, num_predict: int | None = None):
         from langchain_ollama import ChatOllama
+        s = self.settings
+        return ChatOllama(
+            model=s.ollama_model,
+            base_url=s.ollama_url,
+            temperature=0,
+            num_predict=num_predict or s.num_predict,
+            num_ctx=s.num_ctx,
+            keep_alive=s.keep_alive,
+        )
 
+    def warmup(self) -> None:
+        """Charge le LLM en RAM dès le démarrage : la 1re question ne paie pas le chargement."""
+        self._llm(num_predict=1).invoke("ok")
+        log.info("llm_warmed_up", model=self.settings.ollama_model)
+
+    def ask(self, question: str, history: list[dict] | None = None) -> dict:
+        history = (history or [])[-2 * self.settings.history_turns:]
         query = retrieval_query(question, history)
         docs = self._vectorstore().similarity_search(query, k=self.settings.top_k)
         contexts = [{"text": d.page_content, "source": d.metadata.get("source", "?")} for d in docs]
-        llm = ChatOllama(model=self.settings.ollama_model, base_url=self.settings.ollama_url, temperature=0)
-        answer = llm.invoke(build_prompt(question, contexts, history)).content
+        answer = self._llm().invoke(build_prompt(question, contexts, history)).content
         return {"answer": answer, "sources": format_sources(contexts)}

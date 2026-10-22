@@ -33,10 +33,15 @@ async def index_when_ready() -> None:
         try:
             await run_in_threadpool(assistant.index)
             if assistant.indexed:
-                return
+                break
         except Exception as exc:
             log.info("index_retry", reason=str(exc))
         await asyncio.sleep(10)
+    # Préchauffage séparé : un échec ici ne doit pas relancer toute l'indexation
+    try:
+        await run_in_threadpool(assistant.warmup)
+    except Exception as exc:
+        log.warning("warmup_failed", reason=str(exc))
 
 
 @asynccontextmanager

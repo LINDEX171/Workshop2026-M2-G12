@@ -24,9 +24,14 @@ class Settings(BaseSettings):
     knowledge_dir: str = "/app/knowledge"
     chroma_dir: str = "/tmp/chroma"
 
-    chunk_size: int = 800
-    chunk_overlap: int = 120
-    top_k: int = 4
+    # Réglages de latence (CPU sans GPU) : prompt court + réponse bornée -> ~5 s.
+    chunk_size: int = 500
+    chunk_overlap: int = 80
+    top_k: int = 3
+    history_turns: int = 2      # échanges précédents gardés dans le prompt
+    num_predict: int = 160      # longueur max de la réponse (tokens)
+    num_ctx: int = 2048         # fenêtre de contexte (plus petite = plus rapide)
+    keep_alive: int = -1        # garde le modèle chargé en RAM (pas de rechargement à froid)
 
 
 @lru_cache

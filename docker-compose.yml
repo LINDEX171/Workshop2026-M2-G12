@@ -351,6 +351,8 @@ services:
     <<: *hardening
     volumes:
       - ollama-data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: "-1"        # modèles (LLM + embeddings) gardés en RAM : pas de chargement à froid
     networks: [ops]
     profiles: [ai, full]
     healthcheck:

@@ -25,7 +25,10 @@ curl -sk -X POST https://localhost/api/assistant/ask -H 'Content-Type: applicati
 | `EMBED_MODEL` | Modèle d'embeddings | nomic-embed-text |
 | `KNOWLEDGE_DIR` | Doc indexée (lecture seule) | /app/knowledge |
 | `CHROMA_DIR` | Base vectorielle (tmpfs) | /tmp/chroma |
-| `CHUNK_SIZE`/`CHUNK_OVERLAP`/`TOP_K` | Paramètres RAG | 800 / 120 / 4 |
+| `CHUNK_SIZE`/`CHUNK_OVERLAP`/`TOP_K` | Paramètres RAG | 500 / 80 / 3 |
+| `NUM_PREDICT`/`NUM_CTX` | Longueur max de la réponse / fenêtre de contexte (latence CPU) | 160 / 2048 |
+| `HISTORY_TURNS` | Échanges précédents gardés dans le prompt | 2 |
+| `KEEP_ALIVE` | Durée de maintien du LLM en RAM (`-1` = toujours) | -1 |
 
 ## 4. Dépendances
 `ollama` (réseau `ops`) ; `app` pour être appelé via le WAF. Doc montée depuis `docs/` + `README.md`.

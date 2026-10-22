@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import AssistantWidget from "./components/AssistantWidget";
 import Login from "./components/Login";
@@ -44,9 +44,55 @@ function identity(token: string): { sub: string; role: string } | null {
   }
 }
 
+// Session conservée le temps de l'onglet (effacée à sa fermeture) pour survivre à un rafraîchissement.
+const TOKEN_KEY = "ra_token";
+
+function storedToken(): string | null {
+  try {
+    const t = sessionStorage.getItem(TOKEN_KEY);
+    if (!t) return null;
+    const exp = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp;
+    if (typeof exp === "number" && exp * 1000 <= Date.now()) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      return null;
+    }
+    return t;
+  } catch {
+    return null;
+  }
+}
+
+// L'onglet actif est porté par l'URL (#payment, #supervision) : rafraîchir reste sur la même page.
+function tabFromHash(): Tab {
+  const h = window.location.hash.slice(1);
+  return NAV.some((n) => n.id === h) ? (h as Tab) : "home";
+}
+
 export default function App() {
-  const [token, setToken] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("home");
+  const [token, setTokenState] = useState<string | null>(storedToken);
+  const [tab, setTabState] = useState<Tab>(tabFromHash);
+
+  const setToken = (t: string | null) => {
+    try {
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+      else sessionStorage.removeItem(TOKEN_KEY);
+    } catch {
+      /* stockage indisponible : la session reste en mémoire */
+    }
+    setTokenState(t);
+  };
+
+  const setTab = (t: Tab) => {
+    window.location.hash = t === "home" ? "" : t;
+    setTabState(t);
+  };
+
+  // Boutons précédent / suivant du navigateur
+  useEffect(() => {
+    const onHash = () => setTabState(tabFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   if (!token) return <Login onLogin={setToken} />;
 
