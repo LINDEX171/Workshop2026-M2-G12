@@ -16,10 +16,11 @@ peut se révéler insuffisante. C'est exactement ce que ce script permet de vér
 
 Périmètre : UNIQUEMENT le SI fictif du groupe (point d'accès RESILIENCE-G12). Jamais le
 réseau du campus ni une cible tierce.
-
+test d'attaque DoS applicatif sur payment-api, variante à signature TOURNANTE (scénario de démo).
 Stdlib seulement : tourne dans python:3.12-slim sans dépendance.
     python dos_attack_rotating_ua.py --target https://waf:8443 --duration 45 --concurrency 60
     python dos_attack_rotating_ua.py --rotate-per-request   # change même en cours de thread
+
 """
 import argparse
 import random
