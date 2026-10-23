@@ -18,3 +18,11 @@ for name in pg_password payuser_password auth_db_admin_password authuser_passwor
     echo "+ $f généré"
   fi
 done
+
+# smtp_password : secret RÉEL (mot de passe d'application Gmail), pas une valeur aléatoire.
+# On crée juste un fichier vide s'il manque (pour que Docker secrets ne bloque pas) ;
+# à remplir à la main, puis à chiffrer avec ./scripts/encrypt_secrets.sh.
+if [ ! -f secrets/smtp_password.txt ]; then
+  : > secrets/smtp_password.txt
+  echo "+ secrets/smtp_password.txt créé (vide — colle ton App Password Gmail dedans)"
+fi

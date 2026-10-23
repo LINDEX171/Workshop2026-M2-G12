@@ -136,7 +136,7 @@ function CardHeader({ theme }: { theme: Theme }) {
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2" style={{ color: theme.accent }}>
         <LogoMark className="h-7 w-auto" />
-        <span className="text-sm font-bold tracking-[0.18em]" style={emboss}>RESILIENCE</span>
+        <span className="text-sm font-bold tracking-[0.18em]" style={emboss}>AUTO HEAL</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: theme.accent, ...emboss }}>{theme.name}</span>

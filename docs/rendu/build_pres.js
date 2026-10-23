@@ -8,7 +8,7 @@ const sharp = require("sharp");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const OUT = path.join(ROOT, "livrables", "Workshop2026-M2-G12-Pres.pptx");
-const LOGO_SVG = fs.readFileSync(path.join(ROOT, "frontend/src/components/resilience-alpha-logo.svg"), "utf8");
+const LOGO_SVG = fs.readFileSync(path.join(ROOT, "frontend/src/components/auto-heal-logo.svg"), "utf8");
 
 const NAVY = "0B1620";
 const GREEN = "0E8A66";
@@ -37,8 +37,8 @@ async function png(svg, width) {
   return "image/png;base64," + buf.toString("base64");
 }
 
-// Logo : version couleur (fond clair) et version blanche (fond sombre). Ratio 229.18 / 71.
-const LOGO_RATIO = 71 / 229.18;
+// Logo : version couleur (fond clair) et version blanche (fond sombre). Ratio 223.62 / 71.
+const LOGO_RATIO = 71 / 223.62;
 
 async function main() {
   const logoColor = await png(LOGO_SVG, 1400);
@@ -366,7 +366,7 @@ async function main() {
     s.addText("Place à la démonstration", { placeholder: "title" });
     s.addText("Attaque depuis le PC Attaquant → anomalie détectée → remédiation automatique → transaction réussie",
       { x: 0.6, y: 3.0, w: 8.4, h: 0.7, fontSize: 16, color: "CBD5E1", margin: 0, isTextBox: true });
-    s.addText("Équipe : [Prénom Nom] · [Prénom Nom] · [Prénom Nom] · [Prénom Nom] · [Prénom Nom]",
+    s.addText("Équipe : Ibrahima DIENG · Simon Junior POUT · Babacar ANE · Richard Cédric YAO · Yasmine A. O. DJINADOU",
       { x: 0.6, y: 4.6, w: 8.8, h: 0.35, fontSize: 12, color: MINT, margin: 0, isTextBox: true });
     s.addText("Merci — questions bienvenues", { x: 0.6, y: 4.95, w: 8.8, h: 0.3, fontSize: 12, color: "94A3B8", margin: 0, isTextBox: true });
     s.addNotes("Passons à la démonstration en direct : lancement de l'attaque depuis le PC attaquant, puis on regarde l'onglet Supervision et Grafana jusqu'à la transaction de preuve.");

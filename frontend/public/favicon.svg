@@ -4,5 +4,9 @@
     @media (prefers-color-scheme: dark) { .shield { stroke: #E2E8F0; } }
   </style>
   <path class="shield" d="M32 3 L59 13 V35 C59 52 47 63 32 69 C17 63 5 52 5 35 V13 Z" fill="none" stroke-width="3.6" stroke-linejoin="round"/>
-  <path d="M44 25 C40 40 35 48 27.5 48 C21.5 48 18.5 43.5 18.5 38 C18.5 31 23 25.5 29 25.5 C35.5 25.5 38 33 40.5 40.5 C42.5 46 44.5 48 47.5 48" fill="none" stroke="#0E8A66" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="none" stroke="#0E8A66" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40.32 24.62 A14.5 14.5 0 1 1 25.87 23.36"/>
+    <path d="M21.04 20.09 L28.14 22.30 L25.27 29.16"/>
+    <path d="M32 30.5 V42.5 M26 36.5 H38"/>
+  </g>
 </svg>

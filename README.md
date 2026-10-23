@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/src/components/resilience-alpha-logo.svg" alt="Resilience Alpha" width="360">
+  <img src="frontend/src/components/auto-heal-logo.svg" alt="Auto Heal, Resilience Alpha" width="360">
 </p>
 
 # RESILIENCE-ALPHA
@@ -146,7 +146,15 @@ Voir la section 13 ci-dessous.
 [docs/ebios/](docs/ebios/) · [docs/pca-pra.md](docs/pca-pra.md) · [docs/nis2-dora.md](docs/nis2-dora.md) · [docs/runbooks/](docs/runbooks/).
 
 ## 12. Contributions
-_(à compléter par l'équipe : qui a fait quoi par domaine/service)._
+Chaque membre a porté un domaine ; les décisions d'architecture ont été prises en commun.
+
+| Membre | Domaine | Contributions |
+|---|---|---|
+| **Ibrahima DIENG** | Développement | API de paiement et authentification, interface React, API de remédiation, tests |
+| **Simon Junior POUT** | Infrastructure | Docker Compose et 5 réseaux, Ansible, Prometheus / Grafana / Loki, proxy Docker |
+| **Babacar ANE** | IA / Data | Données d'entraînement, modèle hybride, calibration du seuil, assistant RAG |
+| **Richard Cédric YAO** | Cybersécurité | WAF ModSecurity, SOC Grafana, SOPS + age, durcissement, scénarios d'attaque |
+| **Yasmine A. O. DJINADOU** | Transformation | EBIOS RM, PCA / PRA, NIS2 / DORA, coordination du dossier et du pitch |
 
 ---
 

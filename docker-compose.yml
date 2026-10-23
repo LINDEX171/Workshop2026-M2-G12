@@ -92,7 +92,16 @@ services:
     environment:
       SERVICE_NAME: remediator
       TZ: ${TZ:-Europe/Paris}
-    secrets: [operator_password]   # transaction de preuve lors de la vérification de reprise
+      # Notifications e-mail (best-effort). Gmail par défaut ; pour Mailpit local :
+      # NOTIFY_ENABLED=true SMTP_HOST=mailpit SMTP_PORT=1025 SMTP_USE_TLS=false
+      NOTIFY_ENABLED: ${NOTIFY_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      NOTIFY_FROM: ${NOTIFY_FROM:-}
+      NOTIFY_TO: ${NOTIFY_TO:-}
+    secrets: [operator_password, smtp_password]   # preuve de reprise + envoi des mails
     volumes:
       - ./infra/waf/banlist:/var/lib/waf-banlist       # IP bannies (écriture)
       - ./infra/waf/banlist-ua:/var/lib/waf-banlist-ua # signatures bannies (écriture)
@@ -361,6 +370,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # Boîte mail LOCALE de repli pour les notifications (aucun secret, aucun internet).
+  # UI consultée sur le PC Hôte en local (127.0.0.1), jamais exposée au hotspot.
+  # Activée au besoin : profil `mail`, et côté remediator SMTP_HOST=mailpit SMTP_PORT=1025.
+  mailpit:
+    image: axllent/mailpit:v1.20.0
+    <<: *hardening
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "127.0.0.1:8025:8025"   # interface web (lecture des mails), locale uniquement
+    networks: [ops]
+    profiles: [mail]            # opt-in : tiré seulement si tu utilises le repli local
+
 # --- Secrets ---
 # Phase 1 : fichiers locaux gitignorés générés par scripts/init_dev_secrets.sh.
 # Phase 10 : déchiffrés à la volée depuis secrets/secrets.enc.env (SOPS + age).
@@ -381,6 +405,8 @@ secrets:
     file: ./secrets/jwt_secret.txt
   grafana_admin_password:
     file: ./secrets/grafana_admin_password.txt
+  smtp_password:            # mot de passe d'application Gmail (notifications remediator)
+    file: ./secrets/smtp_password.txt
 
 volumes:
   pgdata:

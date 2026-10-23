@@ -81,7 +81,7 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
           </ul>
         </div>
 
-        <p className="relative text-xs text-slate-500">© 2026 Resilience Alpha</p>
+        <p className="relative text-xs text-slate-500">© 2026 Auto Heal</p>
       </aside>
 
       {/* Formulaire */}

@@ -11,7 +11,7 @@ import structlog
 from fastapi.concurrency import run_in_threadpool
 from prometheus_client import Counter, Histogram
 
-from app import ansible, docker_api, signature, verify
+from app import ansible, docker_api, notify, signature, verify
 from app.config import Settings
 
 log = structlog.get_logger()
@@ -60,8 +60,10 @@ class Remediator:
                 await self._run(incident, itype)
 
     async def _run(self, incident: dict, itype: str) -> None:
+        t0 = datetime.now(timezone.utc)
         self._emit(incident, "detected", detail=f"score={incident.get('score')}")
         log.warning("remediation_start", type=itype, target=incident.get("target"))
+        notify.attack_detected(self.settings, incident)  # mail best-effort : incident détecté
 
         actions = DECISION_TABLE.get(itype)
         if not actions:
@@ -86,6 +88,8 @@ class Remediator:
                     self._emit(incident, "recovered", action=action_name,
                                detail=f"transaction #{recovery.get('tx_id')} OK après {recovery['attempts']} essai(s)")
                     log.info("remediation_recovered", type=itype, action=action_name)
+                    downtime = (datetime.now(timezone.utc) - t0).total_seconds()
+                    notify.service_recovered(self.settings, incident, action_name, recovery, downtime)
                     return
         except Exception as exc:  # jamais laisser la tâche de fond crasher sans trace
             self._emit(incident, "escalated", detail=f"erreur interne: {exc}")

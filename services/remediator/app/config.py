@@ -40,8 +40,22 @@ class Settings(BaseSettings):
     verify_attempts: int = 12
     verify_delay_sec: float = 2.0
 
+    # --- Notifications e-mail (SOC / notification d'incident NIS2-DORA) ---
+    # Best-effort : désactivé par défaut, n'impacte jamais la remédiation.
+    # Gmail : smtp_host=smtp.gmail.com, port=587, use_tls=true, username=<adresse>.
+    # Mailpit local (repli hors-ligne) : smtp_host=mailpit, port=1025, use_tls=false.
+    notify_enabled: bool = False
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_use_tls: bool = True
+    smtp_username: str = ""
+    notify_from: str = ""   # défaut : smtp_username
+    notify_to: str = ""     # destinataire des alertes
+
     # --- Secrets ---
     operator_password: SecretStr = SecretStr("")
+    # Mot de passe d'application Gmail (vide = pas d'auth, ex. Mailpit). Via Docker secrets.
+    smtp_password: SecretStr = SecretStr("")
 
 
 @lru_cache
