@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Phase, PlatformStatus, api } from "../api";
 import Hero from "../components/Hero";
+import RemediationJournal from "../components/RemediationJournal";
 import ScoreMeter from "../components/ScoreMeter";
 import StatusPill from "../components/StatusPill";
 import { formatTime } from "../format";
@@ -29,15 +30,6 @@ const PHASE_VIEW = {
   during: { title: "Incident en cours", text: "Anomalie détectée : la remédiation automatique est engagée.", tone: "red", icon: "!", ring: "bg-red-400" },
   after: { title: "Service rétabli", text: "Reprise vérifiée par une transaction réelle à travers le WAF.", tone: "sky", icon: "✓", ring: "bg-sky-400" },
 } as const;
-
-const EVENT_STYLES: Record<string, { badge: string; dot: string; label: string }> = {
-  detected: { badge: "bg-amber-50 text-amber-700", dot: "bg-amber-500", label: "Détecté" },
-  running: { badge: "bg-amber-50 text-amber-700", dot: "bg-amber-500", label: "En cours" },
-  recovered: { badge: "bg-green-50 text-good", dot: "bg-good", label: "Rétabli" },
-  failed: { badge: "bg-red-50 text-critical", dot: "bg-critical", label: "Échec" },
-  escalated: { badge: "bg-red-50 text-critical", dot: "bg-critical", label: "Escaladé" },
-};
-const DEFAULT_EVENT = { badge: "bg-slate-100 text-slate-600", dot: "bg-slate-400", label: "" };
 
 export default function Supervision({ token }: { token: string }) {
   const [status, setStatus] = useState<PlatformStatus | null>(null);
@@ -170,49 +162,8 @@ export default function Supervision({ token }: { token: string }) {
         </section>
       </div>
 
-      {/* --- Journal des remédiations, en frise --- */}
-      <section className="card">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="card-title">Journal des remédiations</h2>
-          {status && <span className="badge bg-slate-100 text-slate-500">{status.events.length}</span>}
-        </div>
-        {!status || status.events.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
-                <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4zM9 12l2 2 4-4" />
-              </svg>
-            </span>
-            <p className="mt-3 text-sm font-semibold text-slate-700">Aucune remédiation enregistrée</p>
-            <p className="mt-1 text-xs text-slate-400">Les actions automatiques apparaîtront ici dès le premier incident.</p>
-          </div>
-        ) : (
-          <ol className="px-6 py-5">
-            {status.events.map((e, i) => {
-              const st = EVENT_STYLES[e.status] ?? DEFAULT_EVENT;
-              const last = i === status.events.length - 1;
-              return (
-                <li key={`${e.ts}-${i}`} className="relative flex gap-4 pb-5 last:pb-0">
-                  {!last && <span className="absolute left-[5px] top-4 h-full w-px bg-slate-200" aria-hidden="true" />}
-                  <span className={`relative mt-1.5 h-3 w-3 shrink-0 rounded-full ring-4 ring-white ${st.dot}`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="font-mono text-xs tabular-nums text-slate-400">{formatTime(e.ts)}</span>
-                      <span className="text-sm font-semibold text-slate-800">{e.action ?? e.type ?? "Action inconnue"}</span>
-                      <span className={`badge ${st.badge}`}>{st.label || e.status}</span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {e.type ?? "Incident inconnu"}
-                      {e.target && <> · cible <span className="font-mono">{e.target}</span></>}
-                      {e.detail && <> · {e.detail}</>}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
+      {/* --- Journal des remédiations, regroupé par incident --- */}
+      <RemediationJournal events={status ? status.events : null} />
 
       {status && (
         <p className="text-right text-xs text-slate-400">Rafraîchi toutes les {POLL_MS / 1000} s</p>
